@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ONnOFF² IN JAPAN · 설문 리포트</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+* { margin:0; padding:0; box-sizing:border-box; }
+html, body { height:100%; }
+body { font-family:'Inter',-apple-system,BlinkMacSystemFont,sans-serif; background:#f5f5f7; color:#1d1d1f; -webkit-font-smoothing:antialiased; }
+
+.login-wrap { display:flex; align-items:center; justify-content:center; min-height:100vh; }
+.login-box { background:#fff; border-radius:18px; padding:48px 40px; width:100%; max-width:380px; box-shadow:0 4px 24px rgba(0,0,0,0.06); text-align:center; }
+.login-box h1 { font-size:24px; font-weight:700; margin-bottom:6px; }
+.login-box .sub { font-size:13px; color:#86868b; margin-bottom:32px; }
+.pw-field { position:relative; }
+.pw-field input {
+  width:100%; padding:14px 44px 14px 16px; border:1px solid #d2d2d7; border-radius:10px;
+  font-size:15px; font-family:'Inter',sans-serif; outline:none; transition:border 0.2s;
+}
+.pw-field input:focus { border-color:#0071e3; }
+.pw-field input.error { border-color:#ff3b30; animation:shake 0.4s; }
+@keyframes shake { 0%,100%{transform:translateX(0)} 25%{transform:translateX(-6px)} 75%{transform:translateX(6px)} }
+.eye-btn { position:absolute; right:14px; top:50%; transform:translateY(-50%); cursor:pointer; user-select:none; line-height:0; background:none; border:none; padding:0; }
+.login-box button.submit {
+  width:100%; padding:14px; margin-top:12px; border:none; border-radius:10px;
+  background:#0071e3; color:#fff; font-size:15px; font-weight:600; font-family:'Inter',sans-serif;
+  cursor:pointer; transition:background 0.2s;
+}
+.login-box button.submit:hover { background:#0077ed; }
+.err-msg { color:#ff3b30; font-size:12px; margin-top:10px; min-height:16px; }
+
+.dashboard-frame { display:none; width:100%; height:100vh; border:none; }
+
+@media(max-width:600px) {
+  .login-box { margin:0 16px; padding:36px 24px; }
+}
+</style>
+</head>
+<body>
+
+<div id="loginScreen" class="login-wrap">
+  <div class="login-box">
+    <h1>ONnOFF² IN JAPAN</h1>
+    <div class="sub">팬미팅 설문 리포트 · 관계자 전용</div>
+    <div class="pw-field">
+      <input type="text" id="pwInput" placeholder="비밀번호를 입력하세요" autocomplete="off">
+      <button class="eye-btn" onclick="togglePw()">
+        <svg id="eyeOff" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#aeaeb2" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:none"><path d="M2.42 12S5.5 5.5 12 5.5 21.58 12 21.58 12 18.5 18.5 12 18.5 2.42 12 2.42 12z"/><circle cx="12" cy="12" r="2.5" fill="#aeaeb2" stroke="none"/><line x1="4" y1="4" x2="20" y2="20" stroke="#aeaeb2" stroke-width="2.5"/></svg>
+        <svg id="eyeOn" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#aeaeb2" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2.42 12S5.5 5.5 12 5.5 21.58 12 21.58 12 18.5 18.5 12 18.5 2.42 12 2.42 12z"/><circle cx="12" cy="12" r="2.5" fill="#aeaeb2" stroke="none"/></svg>
+      </button>
+    </div>
+    <button class="submit" onclick="tryLogin()">로그인</button>
+    <div class="err-msg" id="errMsg"></div>
+  </div>
+</div>
+
+<iframe id="dashFrame" class="dashboard-frame"
+  src="https://script.google.com/macros/s/AKfycbwKf8XmTwjVmv_5QeCGFstHohdKeuMV58VrtHiigYzDAWHcQJsWQpFIH5_wmgfO8mJHxg/exec">
+</iframe>
+
+<script>
+var HASH = 'd90ca42b2c4082947fcce7339fe269d516ec9c64997711d02b0f1de615b0e050';
+
+/* SHA-256 */
+async function sha256(text) {
+  var data = new TextEncoder().encode(text);
+  var buf = await crypto.subtle.digest('SHA-256', data);
+  var arr = Array.from(new Uint8Array(buf));
+  return arr.map(function(b){ return ('0'+b.toString(16)).slice(-2); }).join('');
+}
+
+/* 눈 토글 (디폴트: 보이기) */
+function togglePw() {
+  var inp = document.getElementById('pwInput');
+  var on = document.getElementById('eyeOn');
+  var off = document.getElementById('eyeOff');
+  if (inp.type === 'text') {
+    inp.type = 'password';
+    on.style.display = 'none';
+    off.style.display = '';
+  } else {
+    inp.type = 'text';
+    on.style.display = '';
+    off.style.display = 'none';
+  }
+}
+
+/* 로그인 */
+async function tryLogin() {
+  var pw = document.getElementById('pwInput').value;
+  var h = await sha256(pw);
+  if (h === HASH) {
+    sessionStorage.setItem('auth', '1');
+    showDashboard();
+  } else {
+    var inp = document.getElementById('pwInput');
+    inp.classList.add('error');
+    document.getElementById('errMsg').textContent = '비밀번호가 틀렸습니다';
+    setTimeout(function(){ inp.classList.remove('error'); }, 500);
+  }
+}
+
+function showDashboard() {
+  document.getElementById('loginScreen').style.display = 'none';
+  document.getElementById('dashFrame').style.display = 'block';
+}
+
+/* 엔터키 */
+document.getElementById('pwInput').addEventListener('keydown', function(e) {
+  if (e.key === 'Enter') tryLogin();
+});
+
+/* 세션 유지 — 탭 닫기 전까지 로그인 유지, 새로고침 OK */
+if (sessionStorage.getItem('auth') === '1') {
+  showDashboard();
+}
+</script>
+</body>
+</html>
