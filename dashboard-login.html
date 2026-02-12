@@ -89,7 +89,7 @@ body{font-family:'Inter',-apple-system,BlinkMacSystemFont,sans-serif;background:
 </div>
 <button class="login-btn" onclick="tryLogin()">로그인</button>
 <div class="err-msg" id="errMsg"></div>
-<div class="ver">2.1.0</div>
+<div class="ver">2.2.0</div>
 </div>
 </div>
 <!-- LOADING -->
@@ -146,12 +146,16 @@ body{font-family:'Inter',-apple-system,BlinkMacSystemFont,sans-serif;background:
 </div>
 <div class="rev">
 <div class="sec-title">예상 수익 시뮬레이션</div>
-<div class="sec-sub">참가 긍정률 × 평균 티켓가 기반</div>
+<div class="sec-sub">참가 의향 가중치 × 평균 티켓가 (가격무관=최대치) 기반 · 표준편차 보정</div>
 <div class="rev-grid">
-<div class="rev-card"><div class="big" id="rExp"></div><div class="rl">예상 참가</div></div>
 <div class="rev-card"><div class="big" id="rAvg"></div><div class="rl">평균 티켓가</div></div>
-<div class="rev-card"><div class="big accent" id="rRev"></div><div class="rl" id="rRevKrw"></div></div>
-<div class="rev-card"><div class="big" id="rCon"></div><div class="rl" id="rConKrw"></div></div>
+<div class="rev-card"><div class="big" id="rStd"></div><div class="rl">오차범위 (±σ)</div></div>
+<div class="rev-card"><div class="big accent" id="rOpt"></div><div class="rl" id="rOptLabel"></div></div>
+<div class="rev-card"><div class="big" id="rCon"></div><div class="rl" id="rConLabel"></div></div>
+</div>
+<div class="rev-grid" style="margin-top:12px">
+<div class="rev-card" style="grid-column:span 2"><div class="big" id="rTokyo"></div><div class="rl" id="rTokyoLabel"></div></div>
+<div class="rev-card" style="grid-column:span 2"><div class="big" id="rOsaka"></div><div class="rl" id="rOsakaLabel"></div></div>
 </div>
 </div>
 <div class="sec-title">캐스트에게 보내는 메시지</div>
@@ -165,7 +169,6 @@ body{font-family:'Inter',-apple-system,BlinkMacSystemFont,sans-serif;background:
 var HASH = 'd90ca42b2c4082947fcce7339fe269d516ec9c64997711d02b0f1de615b0e050';
 var APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwKf8XmTwjVmv_5QeCGFstHohdKeuMV58VrtHiigYzDAWHcQJsWQpFIH5_wmgfO8mJHxg/exec';
 var DASH_URL = 'https://api.allorigins.win/raw?url=' + encodeURIComponent(APPS_SCRIPT_URL);
-
 // 카카오톡 인앱브라우저 우회
 var ua = navigator.userAgent || '';
 var isKakao = /KAKAOTALK/i.test(ua);
@@ -305,12 +308,22 @@ function render(d) {
   thinBar('b-city', d.city, '#2997ff');
   thinBar('b-prog', d.program, '#0071e3');
   var r = d.revenue;
-  document.getElementById('rExp').textContent = '~' + r.expAttendees + '명';
   document.getElementById('rAvg').textContent = r.avgTicket;
-  document.getElementById('rRev').textContent = r.expRevenue;
-  document.getElementById('rRevKrw').textContent = '예상 매출 (' + r.expRevenueKRW + ')';
+  document.getElementById('rStd').textContent = '±' + r.stdDev + '명';
+  document.getElementById('rOpt').textContent = r.optRevenue;
+  document.getElementById('rOptLabel').textContent = '낙관적 ~' + r.optAttendees + '명 (' + r.optRevenueKRW + ')';
   document.getElementById('rCon').textContent = r.conRevenue;
-  document.getElementById('rConKrw').textContent = '보수적 ' + r.conAttendees + '석 (' + r.conRevenueKRW + ')';
+  document.getElementById('rConLabel').textContent = '보수적 ~' + r.conAttendees + '명 (' + r.conRevenueKRW + ')';
+  var tk = r.cityRevenue && r.cityRevenue['도쿄'];
+  var os = r.cityRevenue && r.cityRevenue['오사카'];
+  if (tk) {
+    document.getElementById('rTokyo').textContent = '¥' + tk.optRev.toLocaleString();
+    document.getElementById('rTokyoLabel').textContent = '도쿄 ~' + tk.opt + '명 (보수적 ' + tk.con + '명)';
+  }
+  if (os) {
+    document.getElementById('rOsaka').textContent = '¥' + os.optRev.toLocaleString();
+    document.getElementById('rOsakaLabel').textContent = '오사카 ~' + os.opt + '명 (보수적 ' + os.con + '명)';
+  }
   document.getElementById('msgSubtitle').textContent = d.msgCount + '개 · 최신순 · 일본어→한국어';
   var msgHtml = '';
   for (var i = 0; i < d.messages.length; i++) {
