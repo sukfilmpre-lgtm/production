@@ -59,8 +59,9 @@ body{font-family:'Inter',-apple-system,BlinkMacSystemFont,sans-serif;background:
 .rev-card .big{font-size:20px;font-weight:700;color:#1d1d1f}
 .rev-card .big.accent{color:#0071e3}
 .rev-card .rl{font-size:10px;color:#86868b;margin-top:4px;text-transform:uppercase;letter-spacing:.3px}
-.msg{padding:16px 0;border-bottom:1px solid #f0f0f0}
-.msg:last-child{border-bottom:none}
+.msg-wrap{background:#f5f5f7;border-radius:14px;padding:28px}
+.msg{background:rgba(255,255,255,0.7);border:1px solid #e8e8ed;border-radius:10px;padding:16px 20px;margin-bottom:10px}
+.msg:last-child{margin-bottom:0}
 .msg-meta{font-size:11px;color:#86868b;margin-bottom:4px;font-weight:500}
 .msg-text{font-size:14px;line-height:1.6;color:#1d1d1f}
 .msg-orig{font-size:12px;color:#aeaeb2;margin-top:4px}
@@ -166,7 +167,7 @@ body{font-family:'Inter',-apple-system,BlinkMacSystemFont,sans-serif;background:
 </div>
 <div class="sec-title">캐스트에게 보내는 메시지</div>
 <div class="sec-sub" id="msgSubtitle"></div>
-<div id="msgList"></div>
+<div class="msg-wrap"><div id="msgList"></div></div>
 </div>
 </div>
 
@@ -176,6 +177,7 @@ body{font-family:'Inter',-apple-system,BlinkMacSystemFont,sans-serif;background:
 var HASH = 'd90ca42b2c4082947fcce7339fe269d516ec9c64997711d02b0f1de615b0e050';
 var APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwKf8XmTwjVmv_5QeCGFstHohdKeuMV58VrtHiigYzDAWHcQJsWQpFIH5_wmgfO8mJHxg/exec';
 var PROXIES = [
+  'https://corsproxy.io/?' + encodeURIComponent(APPS_SCRIPT_URL),
   'https://api.allorigins.win/raw?url=' + encodeURIComponent(APPS_SCRIPT_URL),
   'https://api.codetabs.com/v1/proxy?quest=' + encodeURIComponent(APPS_SCRIPT_URL)
 ];
@@ -228,7 +230,7 @@ function loadDash() {
 }
 function tryFetch(idx) {
   if (idx >= PROXIES.length) {
-    document.getElementById('loader').innerHTML = '<p style="color:#ff3b30">데이터 로딩 오류<br><small style="color:#86868b">잠시 후 다시 시도해주세요</small></p>';
+    document.getElementById('loader').innerHTML = '<p style="color:#ff3b30">데이터 로딩 오류<br><small style="color:#86868b">모든 프록시 실패 · 잠시 후 다시 시도해주세요</small><br><button onclick="location.reload()" style="margin-top:12px;padding:8px 20px;border:1.5px solid #0071e3;background:#fff;color:#0071e3;border-radius:8px;font-size:13px;cursor:pointer">새로고침</button></p>';
     return;
   }
   fetch(PROXIES[idx])
@@ -240,6 +242,7 @@ function tryFetch(idx) {
       render(d);
     })
     .catch(function(e) {
+      console.log('Proxy ' + idx + ' failed:', e.message);
       tryFetch(idx + 1);
     });
 }
@@ -340,21 +343,22 @@ function render(d) {
   thinBar('b-city', d.city, '#2997ff');
   thinBar('b-prog', d.program, '#0071e3');
   var r = d.revenue;
-  document.getElementById('rAvg').textContent = r.avgTicket;
-  document.getElementById('rStd').textContent = '±' + r.stdDev + '명';
-  document.getElementById('rOpt').textContent = r.optRevenue;
-  document.getElementById('rOptLabel').textContent = '낙관적 ~' + r.optAttendees + '명 (' + r.optRevenueKRW + ')';
-  document.getElementById('rCon').textContent = r.conRevenue;
-  document.getElementById('rConLabel').textContent = '보수적 ~' + r.conAttendees + '명 (' + r.conRevenueKRW + ')';
+  var fmt = function(n){ return Number(n).toLocaleString(); };
+  document.getElementById('rAvg').textContent = '¥' + fmt(r.avgTicket) + ' (₩' + fmt(r.avgTicket * 9) + ')';
+  document.getElementById('rStd').textContent = '±' + fmt(r.stdDev) + '명';
+  document.getElementById('rOpt').textContent = '¥' + fmt(r.optRevenue);
+  document.getElementById('rOptLabel').textContent = '낙관적 ~' + fmt(r.optAttendees) + '명 (약 ' + fmt(r.optRevenueKRW) + '만원)';
+  document.getElementById('rCon').textContent = '¥' + fmt(r.conRevenue);
+  document.getElementById('rConLabel').textContent = '보수적 ~' + fmt(r.conAttendees) + '명 (약 ' + fmt(r.conRevenueKRW) + '만원)';
   var tk = r.cityRevenue && r.cityRevenue['도쿄'];
   var os = r.cityRevenue && r.cityRevenue['오사카'];
   if (tk) {
-    document.getElementById('rTokyo').textContent = '¥' + tk.optRev.toLocaleString();
-    document.getElementById('rTokyoLabel').textContent = '도쿄 ~' + tk.opt + '명 (보수적 ' + tk.con + '명)';
+    document.getElementById('rTokyo').textContent = '¥' + fmt(tk.optRev);
+    document.getElementById('rTokyoLabel').textContent = '도쿄 ~' + fmt(tk.opt) + '명 (보수적 ' + fmt(tk.con) + '명) · 약 ' + fmt(tk.optRevKRW) + '만원';
   }
   if (os) {
-    document.getElementById('rOsaka').textContent = '¥' + os.optRev.toLocaleString();
-    document.getElementById('rOsakaLabel').textContent = '오사카 ~' + os.opt + '명 (보수적 ' + os.con + '명)';
+    document.getElementById('rOsaka').textContent = '¥' + fmt(os.optRev);
+    document.getElementById('rOsakaLabel').textContent = '오사카 ~' + fmt(os.opt) + '명 (보수적 ' + fmt(os.con) + '명) · 약 ' + fmt(os.optRevKRW) + '만원';
   }
   document.getElementById('msgSubtitle').textContent = d.msgCount + '개 · 최신순 · 일본어→한국어';
   var msgHtml = '';
