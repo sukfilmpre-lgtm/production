@@ -226,25 +226,28 @@ if (sessionStorage.getItem('auth') === '1' && !isKakao) loadDash();
 function loadDash() {
   document.getElementById('loginScreen').classList.add('hidden');
   document.getElementById('loader').classList.remove('hidden');
-  tryFetch(0);
+  raceFetch();
 }
-function tryFetch(idx) {
-  if (idx >= PROXIES.length) {
-    document.getElementById('loader').innerHTML = '<p style="color:#ff3b30">데이터 로딩 오류<br><small style="color:#86868b">모든 프록시 실패 · 잠시 후 다시 시도해주세요</small><br><button onclick="location.reload()" style="margin-top:12px;padding:8px 20px;border:1.5px solid #0071e3;background:#fff;color:#0071e3;border-radius:8px;font-size:13px;cursor:pointer">새로고침</button></p>';
-    return;
-  }
-  fetch(PROXIES[idx])
-    .then(function(res) {
-      if (!res.ok) throw new Error('HTTP ' + res.status);
-      return res.json();
-    })
-    .then(function(d) {
-      render(d);
-    })
-    .catch(function(e) {
-      console.log('Proxy ' + idx + ' failed:', e.message);
-      tryFetch(idx + 1);
-    });
+function raceFetch() {
+  var done = false;
+  var fails = 0;
+  PROXIES.forEach(function(url, i) {
+    fetch(url)
+      .then(function(res) {
+        if (!res.ok) throw new Error('HTTP ' + res.status);
+        return res.json();
+      })
+      .then(function(d) {
+        if (!done) { done = true; render(d); }
+      })
+      .catch(function(e) {
+        console.log('Proxy ' + i + ' failed:', e.message);
+        fails++;
+        if (fails >= PROXIES.length && !done) {
+          document.getElementById('loader').innerHTML = '<p style="color:#ff3b30">데이터 로딩 오류<br><small style="color:#86868b">모든 프록시 실패 · 잠시 후 다시 시도해주세요</small><br><button onclick="location.reload()" style="margin-top:12px;padding:8px 20px;border:1.5px solid #0071e3;background:#fff;color:#0071e3;border-radius:8px;font-size:13px;cursor:pointer">새로고침</button></p>';
+        }
+      });
+  });
 }
 
 // ===== Chart.js =====
