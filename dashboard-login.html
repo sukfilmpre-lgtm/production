@@ -161,10 +161,6 @@ body{font-family:'Inter',-apple-system,BlinkMacSystemFont,sans-serif;background:
 <div class="rev-card"><div class="big accent" id="rOpt"></div><div class="rl" id="rOptLabel"></div><div class="rl" id="rOptKRW" style="margin-top:2px"></div></div>
 <div class="rev-card"><div class="big" id="rCon"></div><div class="rl" id="rConLabel"></div><div class="rl" id="rConKRW" style="margin-top:2px"></div></div>
 </div>
-<div class="rev-grid" style="margin-top:12px">
-<div class="rev-card" style="grid-column:span 2"><div class="big" id="rTokyo"></div><div class="rl" id="rTokyoLabel"></div></div>
-<div class="rev-card" style="grid-column:span 2"><div class="big" id="rOsaka"></div><div class="rl" id="rOsakaLabel"></div></div>
-</div>
 </div>
 <div class="sec-title">캐스트에게 보내는 메시지</div>
 <div class="sec-sub" id="msgSubtitle"></div>
@@ -356,16 +352,6 @@ function render(d) {
   document.getElementById('rCon').textContent = '¥' + fmt(r.conRevenue);
   document.getElementById('rConLabel').textContent = '보수적 ~' + fmt(r.conAttendees) + '명';
   document.getElementById('rConKRW').textContent = '약 ' + fmt(r.conRevenueKRW) + '만원';
-  var tk = r.cityRevenue && r.cityRevenue['도쿄'];
-  var os = r.cityRevenue && r.cityRevenue['오사카'];
-  if (tk) {
-    document.getElementById('rTokyo').textContent = '¥' + fmt(tk.optRev);
-    document.getElementById('rTokyoLabel').textContent = '도쿄 ~' + fmt(tk.opt) + '명 (보수적 ' + fmt(tk.con) + '명) · 약 ' + fmt(tk.optRevKRW) + '만원';
-  }
-  if (os) {
-    document.getElementById('rOsaka').textContent = '¥' + fmt(os.optRev);
-    document.getElementById('rOsakaLabel').textContent = '오사카 ~' + fmt(os.opt) + '명 (보수적 ' + fmt(os.con) + '명) · 약 ' + fmt(os.optRevKRW) + '만원';
-  }
   document.getElementById('msgSubtitle').textContent = d.msgCount + '개 · 최신순 · 일본어→한국어';
   var msgHtml = '';
   for (var i = 0; i < d.messages.length; i++) {
