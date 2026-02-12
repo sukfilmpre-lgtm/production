@@ -224,6 +224,20 @@ function loadDash() {
   document.getElementById('loginScreen').classList.add('hidden');
   document.getElementById('loader').classList.remove('hidden');
   raceFetch();
+  sendVisitLog();
+}
+function sendVisitLog() {
+  var uaStr = navigator.userAgent || '';
+  var browser = /Edg/.test(uaStr) ? 'Edge' : /Chrome/.test(uaStr) ? 'Chrome' : /Safari/.test(uaStr) ? 'Safari' : /Firefox/.test(uaStr) ? 'Firefox' : uaStr;
+  var os = /iPhone|iPad/.test(uaStr) ? 'iOS' : /Android/.test(uaStr) ? 'Android' : /Mac/.test(uaStr) ? 'macOS' : /Windows/.test(uaStr) ? 'Windows' : /Linux/.test(uaStr) ? 'Linux' : 'Unknown';
+  var res = screen.width + 'x' + screen.height;
+  var lang = navigator.language || '';
+  var ref = document.referrer || '';
+  fetch('https://api.ipify.org?format=json').then(function(r){return r.json()}).then(function(ip){
+    var body = JSON.stringify({type:'visit', ip:ip.ip, browser:browser, os:os, resolution:res, referrer:ref, language:lang});
+    var postUrl = 'https://corsproxy.io/?' + encodeURIComponent(APPS_SCRIPT_URL);
+    fetch(postUrl, {method:'POST', body:body}).catch(function(){});
+  }).catch(function(){});
 }
 function raceFetch() {
   var done = false;
