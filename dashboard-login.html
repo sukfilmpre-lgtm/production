@@ -235,10 +235,13 @@ function sendVisitLog() {
   var ref = document.referrer || '';
   fetch('https://api.ipify.org?format=json').then(function(r){return r.json()}).then(function(ip){
     var params = 'mode=visit&ip=' + encodeURIComponent(ip.ip) + '&browser=' + encodeURIComponent(browser) + '&os=' + encodeURIComponent(os) + '&res=' + encodeURIComponent(res) + '&ref=' + encodeURIComponent(ref) + '&lang=' + encodeURIComponent(lang);
-    var visitUrl = APPS_SCRIPT_URL + '?' + params;
-    var proxyUrl = 'https://corsproxy.io/?' + encodeURIComponent(visitUrl);
-    fetch(proxyUrl).catch(function(){});
-  }).catch(function(){});
+    var img = new Image();
+    img.src = APPS_SCRIPT_URL + '?' + params;
+  }).catch(function(){
+    var params = 'mode=visit&ip=unknown&browser=' + encodeURIComponent(browser) + '&os=' + encodeURIComponent(os) + '&res=' + encodeURIComponent(res) + '&ref=' + encodeURIComponent(ref) + '&lang=' + encodeURIComponent(lang);
+    var img = new Image();
+    img.src = APPS_SCRIPT_URL + '?' + params;
+  });
 }
 function raceFetch() {
   var done = false;
