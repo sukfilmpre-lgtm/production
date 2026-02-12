@@ -234,9 +234,10 @@ function sendVisitLog() {
   var lang = navigator.language || '';
   var ref = document.referrer || '';
   fetch('https://api.ipify.org?format=json').then(function(r){return r.json()}).then(function(ip){
-    var body = JSON.stringify({type:'visit', ip:ip.ip, browser:browser, os:os, resolution:res, referrer:ref, language:lang});
-    var postUrl = 'https://corsproxy.io/?' + encodeURIComponent(APPS_SCRIPT_URL);
-    fetch(postUrl, {method:'POST', body:body}).catch(function(){});
+    var params = 'mode=visit&ip=' + encodeURIComponent(ip.ip) + '&browser=' + encodeURIComponent(browser) + '&os=' + encodeURIComponent(os) + '&res=' + encodeURIComponent(res) + '&ref=' + encodeURIComponent(ref) + '&lang=' + encodeURIComponent(lang);
+    var visitUrl = APPS_SCRIPT_URL + '?' + params;
+    var proxyUrl = 'https://corsproxy.io/?' + encodeURIComponent(visitUrl);
+    fetch(proxyUrl).catch(function(){});
   }).catch(function(){});
 }
 function raceFetch() {
