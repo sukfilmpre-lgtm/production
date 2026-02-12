@@ -233,8 +233,11 @@ function sendVisitLog() {
   var res = screen.width + 'x' + screen.height;
   var lang = navigator.language || '';
   var ref = document.referrer || '';
-  fetch('https://api.ipify.org?format=json').then(function(r){return r.json()}).then(function(ip){
-    var params = 'mode=visit&ip=' + encodeURIComponent(ip.ip) + '&browser=' + encodeURIComponent(browser) + '&os=' + encodeURIComponent(os) + '&res=' + encodeURIComponent(res) + '&ref=' + encodeURIComponent(ref) + '&lang=' + encodeURIComponent(lang);
+  fetch('https://ipapi.co/json/').then(function(r){return r.json()}).then(function(geo){
+    var ip = geo.ip || 'unknown';
+    var country = geo.country_name || '';
+    var city = geo.city || '';
+    var params = 'mode=visit&ip=' + encodeURIComponent(ip) + '&country=' + encodeURIComponent(country) + '&city=' + encodeURIComponent(city) + '&browser=' + encodeURIComponent(browser) + '&os=' + encodeURIComponent(os) + '&res=' + encodeURIComponent(res) + '&ref=' + encodeURIComponent(ref) + '&lang=' + encodeURIComponent(lang);
     var img = new Image();
     img.src = APPS_SCRIPT_URL + '?' + params;
   }).catch(function(){
