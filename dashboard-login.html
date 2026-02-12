@@ -8,6 +8,7 @@
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
 *{margin:0;padding:0;box-sizing:border-box}
 body{font-family:'Inter',-apple-system,BlinkMacSystemFont,sans-serif;background:#f5f5f7;color:#1d1d1f;-webkit-font-smoothing:antialiased;min-height:100vh}
+
 /* ===== LOGIN ===== */
 .login-wrap{display:flex;align-items:center;justify-content:center;min-height:100vh;padding:20px}
 .login-box{background:#fff;border-radius:18px;box-shadow:0 4px 24px rgba(0,0,0,0.08);padding:48px 40px 40px;width:100%;max-width:380px;text-align:center}
@@ -23,11 +24,13 @@ body{font-family:'Inter',-apple-system,BlinkMacSystemFont,sans-serif;background:
 .login-btn:hover{background:#0077ed}
 .err-msg{color:#ff3b30;font-size:12px;margin-top:8px;min-height:18px}
 .ver{color:#c7c7cc;font-size:11px;margin-top:20px}
+
 /* ===== LOADING ===== */
 .loading{text-align:center;padding:120px 40px}
 .loading .spinner{width:32px;height:32px;border:3px solid #e8e8ed;border-top-color:#0071e3;border-radius:50%;animation:spin .8s linear infinite;margin:0 auto 16px}
 @keyframes spin{to{transform:rotate(360deg)}}
 .loading p{color:#86868b;font-size:14px}
+
 /* ===== DASHBOARD ===== */
 .hero{background:#f5f5f7;padding:64px 40px 52px;text-align:center}
 .hero h1{font-size:34px;font-weight:700;letter-spacing:-.5px;margin-bottom:10px;color:#1d1d1f}
@@ -75,6 +78,7 @@ body{font-family:'Inter',-apple-system,BlinkMacSystemFont,sans-serif;background:
 </style>
 </head>
 <body>
+
 <!-- LOGIN SCREEN -->
 <div id="loginScreen" class="login-wrap">
 <div class="login-box">
@@ -92,11 +96,13 @@ body{font-family:'Inter',-apple-system,BlinkMacSystemFont,sans-serif;background:
 <div class="ver">2.2.0</div>
 </div>
 </div>
+
 <!-- LOADING -->
 <div id="loader" class="loading hidden">
 <div class="spinner"></div>
 <p>데이터 불러오는 중...</p>
 </div>
+
 <!-- DASHBOARD -->
 <div id="dashboard" class="hidden">
 <div class="hero">
@@ -163,12 +169,17 @@ body{font-family:'Inter',-apple-system,BlinkMacSystemFont,sans-serif;background:
 <div id="msgList"></div>
 </div>
 </div>
+
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4"></script>
 <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2"></script>
 <script>
 var HASH = 'd90ca42b2c4082947fcce7339fe269d516ec9c64997711d02b0f1de615b0e050';
 var APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwKf8XmTwjVmv_5QeCGFstHohdKeuMV58VrtHiigYzDAWHcQJsWQpFIH5_wmgfO8mJHxg/exec';
-var DASH_URL = 'https://api.allorigins.win/raw?url=' + encodeURIComponent(APPS_SCRIPT_URL);
+var PROXIES = [
+  'https://api.allorigins.win/raw?url=' + encodeURIComponent(APPS_SCRIPT_URL),
+  'https://api.codetabs.com/v1/proxy?quest=' + encodeURIComponent(APPS_SCRIPT_URL)
+];
+
 // 카카오톡 인앱브라우저 우회
 var ua = navigator.userAgent || '';
 var isKakao = /KAKAOTALK/i.test(ua);
@@ -177,11 +188,13 @@ if (isKakao) {
   if (/android/i.test(ua)) location.href = 'intent://' + location.host + location.pathname + '#Intent;scheme=https;package=com.android.chrome;end';
   else location.href = 'kakaotalk://web/openExternal?url=' + encodeURIComponent(location.href);
 }
+
 async function sha256(t) {
   var d = new TextEncoder().encode(t);
   var b = await crypto.subtle.digest('SHA-256', d);
   return Array.from(new Uint8Array(b)).map(function(x){return ('0'+x.toString(16)).slice(-2)}).join('');
 }
+
 function togglePw() {
   var inp = document.getElementById('pwInput');
   var on = document.getElementById('eyeOn');
@@ -189,6 +202,7 @@ function togglePw() {
   if (inp.type === 'text') { inp.type = 'password'; on.style.display = 'none'; off.style.display = ''; }
   else { inp.type = 'text'; on.style.display = ''; off.style.display = 'none'; }
 }
+
 async function tryLogin() {
   var pw = document.getElementById('pwInput').value;
   if (await sha256(pw) === HASH) {
@@ -201,13 +215,23 @@ async function tryLogin() {
     setTimeout(function(){ inp.classList.remove('error'); }, 500);
   }
 }
+
 document.getElementById('pwInput').addEventListener('keydown', function(e){ if (e.key === 'Enter') tryLogin(); });
+
 // 자동 로그인
 if (sessionStorage.getItem('auth') === '1' && !isKakao) loadDash();
+
 function loadDash() {
   document.getElementById('loginScreen').classList.add('hidden');
   document.getElementById('loader').classList.remove('hidden');
-  fetch(DASH_URL)
+  tryFetch(0);
+}
+function tryFetch(idx) {
+  if (idx >= PROXIES.length) {
+    document.getElementById('loader').innerHTML = '<p style="color:#ff3b30">데이터 로딩 오류<br><small style="color:#86868b">잠시 후 다시 시도해주세요</small></p>';
+    return;
+  }
+  fetch(PROXIES[idx])
     .then(function(res) {
       if (!res.ok) throw new Error('HTTP ' + res.status);
       return res.json();
@@ -216,14 +240,16 @@ function loadDash() {
       render(d);
     })
     .catch(function(e) {
-      document.getElementById('loader').innerHTML = '<p style="color:#ff3b30">데이터 로딩 오류: ' + e.message + '<br><small style="color:#86868b">잠시 후 다시 시도해주세요</small></p>';
+      tryFetch(idx + 1);
     });
 }
+
 // ===== Chart.js =====
 Chart.register(ChartDataLabels);
 var BLUES = ['#0071e3','#2997ff','#5ab4f5','#7ec8f7','#a3d9fb','#c4e5fc','#dceefb','#edf5fd'];
 var TEXT = '#1d1d1f';
 var FLAGS = {'일본':'🇯🇵','한국':'🇰🇷','대만':'🇹🇼','싱가포르':'🇸🇬','말레이시아':'🇲🇾','태국':'🇹🇭','인도네시아':'🇮🇩','베트남':'🇻🇳','필리핀':'🇵🇭','중국':'🇨🇳','홍콩':'🇭🇰','미국':'🇺🇸','브라질':'🇧🇷'};
+
 function sortDesc(obj) {
   var entries = [];
   for (var k in obj) entries.push([k, obj[k]]);
@@ -232,6 +258,7 @@ function sortDesc(obj) {
   for (var i = 0; i < entries.length; i++) { labels.push(entries[i][0]); values.push(entries[i][1]); }
   return { labels: labels, values: values };
 }
+
 function donut(id, legendId, obj) {
   var s = sortDesc(obj);
   var labels = s.labels, values = s.values;
@@ -249,6 +276,7 @@ function donut(id, legendId, obj) {
   }
   document.getElementById(legendId).innerHTML = html;
 }
+
 function thinBar(id, obj, color) {
   var s = sortDesc(obj);
   var labels = s.labels, values = s.values;
@@ -277,6 +305,7 @@ function thinBar(id, obj, color) {
     }
   });
 }
+
 function fmtTime(ts) {
   if (!ts) return '';
   var d = new Date(ts);
@@ -286,10 +315,13 @@ function fmtTime(ts) {
   var mi = ('0'+d.getMinutes()).slice(-2);
   return mm+'/'+dd+' '+hh+':'+mi;
 }
+
 function escHtml(s) {
   return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
 }
+
 function sumObj(o) { var t=0; for(var k in o) t+=o[k]; return t; }
+
 function render(d) {
   document.getElementById('heroTotal').textContent = d.total;
   document.getElementById('sTotal').textContent = d.total;
