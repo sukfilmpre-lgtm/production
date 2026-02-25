@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
-<title>ONnOFF² · 설문 리포트</title>
+<title>ONnOFF³ · 설문 리포트</title>
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
 *{margin:0;padding:0;box-sizing:border-box}
@@ -89,7 +89,7 @@ body{font-family:'Inter',-apple-system,BlinkMacSystemFont,sans-serif;background:
 <!-- LOGIN SCREEN -->
 <div id="loginScreen" class="login-wrap">
 <div class="login-box">
-<h1>ONnOFF² 팬미팅</h1>
+<h1>ONnOFF³ 팬미팅</h1>
 <p class="sub">팬미팅 설문 리포트 · 관계자 전용</p>
 <div class="source-toggle">
 <button class="source-btn active" id="btnJp" onclick="pickSource('jp')"><span class="flag">🇯🇵</span>JAPAN</button>
@@ -117,7 +117,7 @@ body{font-family:'Inter',-apple-system,BlinkMacSystemFont,sans-serif;background:
 <!-- DASHBOARD -->
 <div id="dashboard" class="hidden">
 <div class="hero">
-<h1 id="heroTitle">ONnOFF²</h1>
+<h1 id="heroTitle">ONnOFF³</h1>
 <p>설문 리포트 · <span id="heroTotal"></span>명 응답 · 실시간</p>
 </div>
 <div class="stats-strip">
@@ -377,7 +377,7 @@ function render(d) {
   var fmt = function(n){ return Number(n).toLocaleString(); };
 
   // 히어로
-  document.getElementById('heroTitle').textContent = isJp ? 'ONnOFF² IN JAPAN' : 'ONnOFF² 한국 팬미팅';
+  document.getElementById('heroTitle').textContent = isJp ? 'ONnOFF³ IN JAPAN' : 'ONnOFF³ 한국 팬미팅';
   document.getElementById('heroTotal').textContent = d.total;
 
   // 스탯 스트립
