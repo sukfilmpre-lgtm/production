@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
-<title>ONnOFF² IN JAPAN · 설문 리포트</title>
+<title>ONnOFF² · 설문 리포트</title>
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
 *{margin:0;padding:0;box-sizing:border-box}
@@ -14,7 +14,11 @@ body{font-family:'Inter',-apple-system,BlinkMacSystemFont,sans-serif;background:
 .login-wrap{display:flex;align-items:center;justify-content:center;min-height:100vh;padding:20px;overflow:hidden}
 .login-box{background:#fff;border-radius:18px;box-shadow:0 4px 24px rgba(0,0,0,0.08);padding:48px 40px 40px;width:100%;max-width:380px;text-align:center}
 .login-box h1{font-size:24px;font-weight:700;letter-spacing:-0.3px;margin-bottom:6px}
-.login-box .sub{font-size:13px;color:#86868b;margin-bottom:28px}
+.login-box .sub{font-size:13px;color:#86868b;margin-bottom:24px}
+.source-toggle{display:flex;gap:8px;margin-bottom:20px}
+.source-btn{flex:1;padding:12px 0;border:1.5px solid #d2d2d7;border-radius:10px;background:#fff;font-size:14px;font-weight:600;color:#86868b;cursor:pointer;transition:all .2s}
+.source-btn.active{border-color:#0071e3;background:#0071e3;color:#fff}
+.source-btn .flag{font-size:18px;display:block;margin-bottom:4px}
 .pw-wrap{position:relative;margin-bottom:12px}
 .pw-wrap input{width:100%;padding:14px 48px 14px 16px;border:1.5px solid #d2d2d7;border-radius:10px;font-size:15px;outline:none;transition:border-color .2s}
 .pw-wrap input:focus{border-color:#0071e3}
@@ -72,6 +76,7 @@ body{font-family:'Inter',-apple-system,BlinkMacSystemFont,sans-serif;background:
   .hero h1{font-size:26px}
   .stats-strip{grid-template-columns:repeat(2,1fr);margin:-24px 16px 0}
   .stat-item:nth-child(2){border-right:none}
+  .stat-item:nth-child(4){border-right:none}
   .grid-2{grid-template-columns:1fr}
   .rev-grid{grid-template-columns:1fr 1fr}
   .wrap{padding:36px 16px}
@@ -84,8 +89,12 @@ body{font-family:'Inter',-apple-system,BlinkMacSystemFont,sans-serif;background:
 <!-- LOGIN SCREEN -->
 <div id="loginScreen" class="login-wrap">
 <div class="login-box">
-<h1>ONnOFF² IN JAPAN</h1>
+<h1>ONnOFF² 팬미팅</h1>
 <p class="sub">팬미팅 설문 리포트 · 관계자 전용</p>
+<div class="source-toggle">
+<button class="source-btn active" id="btnJp" onclick="pickSource('jp')"><span class="flag">🇯🇵</span>JAPAN</button>
+<button class="source-btn" id="btnKr" onclick="pickSource('kr')"><span class="flag">🇰🇷</span>한국</button>
+</div>
 <div class="pw-wrap">
 <input type="password" id="pwInput" placeholder="비밀번호를 입력하세요" autocomplete="off">
 <button class="eye" onclick="togglePw()">
@@ -95,7 +104,7 @@ body{font-family:'Inter',-apple-system,BlinkMacSystemFont,sans-serif;background:
 </div>
 <button class="login-btn" onclick="tryLogin()">로그인</button>
 <div class="err-msg" id="errMsg"></div>
-<div class="ver">2.2.0</div>
+<div class="ver">3.0.0</div>
 </div>
 </div>
 
@@ -108,13 +117,13 @@ body{font-family:'Inter',-apple-system,BlinkMacSystemFont,sans-serif;background:
 <!-- DASHBOARD -->
 <div id="dashboard" class="hidden">
 <div class="hero">
-<h1>ONnOFF² IN JAPAN</h1>
-<p>팬미팅 설문 리포트 · <span id="heroTotal"></span>명 응답 · 실시간</p>
+<h1 id="heroTitle">ONnOFF²</h1>
+<p>설문 리포트 · <span id="heroTotal"></span>명 응답 · 실시간</p>
 </div>
 <div class="stats-strip">
 <div class="stat-item"><div class="stat-num" id="sTotal"></div><div class="stat-label">총 응답</div></div>
 <div class="stat-item"><div class="stat-num" id="sPos"></div><div class="stat-label">참가 긍정률</div></div>
-<div class="stat-item"><div class="stat-num" id="sJpn"></div><div class="stat-label">일본 거주</div></div>
+<div class="stat-item"><div class="stat-num" id="sRegion"></div><div class="stat-label" id="sRegionLabel">일본 거주</div></div>
 <div class="stat-item"><div class="stat-num" id="sMsg"></div><div class="stat-label">팬 메시지</div></div>
 </div>
 <div class="wrap">
@@ -122,7 +131,7 @@ body{font-family:'Inter',-apple-system,BlinkMacSystemFont,sans-serif;background:
 <div class="sec-sub" id="surveySubtitle"></div>
 <div class="grid-2">
 <div class="card">
-<div class="card-title">거주 국가·지역</div>
+<div class="card-title" id="countryTitle">거주 국가·지역</div>
 <div class="card-sub" id="subCountry"></div>
 <div class="donut-wrap"><canvas id="d-country"></canvas></div>
 <div class="donut-legend" id="leg-country"></div>
@@ -154,12 +163,12 @@ body{font-family:'Inter',-apple-system,BlinkMacSystemFont,sans-serif;background:
 </div>
 <div class="rev">
 <div class="sec-title">예상 수익 시뮬레이션</div>
-<div class="sec-sub">참가 의향 가중치 × 평균 티켓가 (가격무관=최대치) 기반 · 표준편차 보정</div>
+<div class="sec-sub" id="revSubtitle">참가 의향 가중치 × 평균 티켓가 기반 · 표준편차 보정</div>
 <div class="rev-grid">
 <div class="rev-card"><div class="big" id="rAvg"></div><div class="rl">평균 티켓가</div></div>
 <div class="rev-card"><div class="big" id="rStd"></div><div class="rl">오차범위 (±σ)</div></div>
-<div class="rev-card"><div class="big accent" id="rOpt"></div><div class="rl" id="rOptLabel"></div><div class="rl" id="rOptKRW" style="margin-top:2px"></div></div>
-<div class="rev-card"><div class="big" id="rCon"></div><div class="rl" id="rConLabel"></div><div class="rl" id="rConKRW" style="margin-top:2px"></div></div>
+<div class="rev-card"><div class="big accent" id="rOpt"></div><div class="rl" id="rOptLabel"></div><div class="rl" id="rOptSub" style="margin-top:2px"></div></div>
+<div class="rev-card"><div class="big" id="rCon"></div><div class="rl" id="rConLabel"></div><div class="rl" id="rConSub" style="margin-top:2px"></div></div>
 </div>
 </div>
 <div class="sec-title">캐스트에게 보내는 메시지</div>
@@ -171,16 +180,23 @@ body{font-family:'Inter',-apple-system,BlinkMacSystemFont,sans-serif;background:
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4"></script>
 <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2"></script>
 <script>
-var HASH = 'd90ca42b2c4082947fcce7339fe269d516ec9c64997711d02b0f1de615b0e050';
+var HASH = '7fe4499f716f5fa481f8882e8c9d4977d73b98efc01e4cea06ee0f5879ca1877';
 var APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwKf8XmTwjVmv_5QeCGFstHohdKeuMV58VrtHiigYzDAWHcQJsWQpFIH5_wmgfO8mJHxg/exec';
-function getProxies() {
-  var t = '&_t=' + Date.now();
-  var base = APPS_SCRIPT_URL;
+var selectedSource = 'jp';
+
+function getProxies(src) {
+  var base = APPS_SCRIPT_URL + '?source=' + src + '&_t=' + Date.now();
   return [
-    'https://corsproxy.io/?' + encodeURIComponent(base + '?_t=' + Date.now()),
-    'https://api.allorigins.win/raw?url=' + encodeURIComponent(base + '?_t=' + Date.now()),
-    'https://api.codetabs.com/v1/proxy?quest=' + encodeURIComponent(base + '?_t=' + Date.now())
+    'https://corsproxy.io/?' + encodeURIComponent(base),
+    'https://api.allorigins.win/raw?url=' + encodeURIComponent(base),
+    'https://api.codetabs.com/v1/proxy?quest=' + encodeURIComponent(base)
   ];
+}
+
+function pickSource(src) {
+  selectedSource = src;
+  document.getElementById('btnJp').className = 'source-btn' + (src === 'jp' ? ' active' : '');
+  document.getElementById('btnKr').className = 'source-btn' + (src === 'kr' ? ' active' : '');
 }
 
 // 카카오톡 인앱브라우저 우회
@@ -210,6 +226,7 @@ async function tryLogin() {
   var pw = document.getElementById('pwInput').value;
   if (await sha256(pw) === HASH) {
     sessionStorage.setItem('auth', '1');
+    sessionStorage.setItem('source', selectedSource);
     location.reload();
     return;
   } else {
@@ -223,7 +240,10 @@ async function tryLogin() {
 document.getElementById('pwInput').addEventListener('keydown', function(e){ if (e.key === 'Enter') tryLogin(); });
 
 // 자동 로그인
-if (sessionStorage.getItem('auth') === '1' && !isKakao) loadDash();
+if (sessionStorage.getItem('auth') === '1' && !isKakao) {
+  selectedSource = sessionStorage.getItem('source') || 'jp';
+  loadDash();
+}
 
 function loadDash() {
   document.getElementById('loginScreen').classList.add('hidden');
@@ -231,6 +251,7 @@ function loadDash() {
   raceFetch();
   sendVisitLog();
 }
+
 function sendVisitLog() {
   var uaStr = navigator.userAgent || '';
   var browser = /Edg/.test(uaStr) ? 'Edge' : /Chrome/.test(uaStr) ? 'Chrome' : /Safari/.test(uaStr) ? 'Safari' : /Firefox/.test(uaStr) ? 'Firefox' : uaStr;
@@ -242,19 +263,18 @@ function sendVisitLog() {
     var ip = geo.ip || 'unknown';
     var country = geo.country_name || '';
     var city = geo.city || '';
-    var params = 'mode=visit&ip=' + encodeURIComponent(ip) + '&country=' + encodeURIComponent(country) + '&city=' + encodeURIComponent(city) + '&browser=' + encodeURIComponent(browser) + '&os=' + encodeURIComponent(os) + '&res=' + encodeURIComponent(res) + '&ref=' + encodeURIComponent(ref) + '&lang=' + encodeURIComponent(lang);
-    var img = new Image();
-    img.src = APPS_SCRIPT_URL + '?' + params;
+    var params = 'mode=visit&src=' + selectedSource + '&ip=' + encodeURIComponent(ip) + '&country=' + encodeURIComponent(country) + '&city=' + encodeURIComponent(city) + '&browser=' + encodeURIComponent(browser) + '&os=' + encodeURIComponent(os) + '&res=' + encodeURIComponent(res) + '&ref=' + encodeURIComponent(ref) + '&lang=' + encodeURIComponent(lang);
+    new Image().src = APPS_SCRIPT_URL + '?' + params;
   }).catch(function(){
-    var params = 'mode=visit&ip=unknown&browser=' + encodeURIComponent(browser) + '&os=' + encodeURIComponent(os) + '&res=' + encodeURIComponent(res) + '&ref=' + encodeURIComponent(ref) + '&lang=' + encodeURIComponent(lang);
-    var img = new Image();
-    img.src = APPS_SCRIPT_URL + '?' + params;
+    var params = 'mode=visit&src=' + selectedSource + '&ip=unknown&browser=' + encodeURIComponent(browser) + '&os=' + encodeURIComponent(os) + '&res=' + encodeURIComponent(res) + '&ref=' + encodeURIComponent(ref) + '&lang=' + encodeURIComponent(lang);
+    new Image().src = APPS_SCRIPT_URL + '?' + params;
   });
 }
+
 function raceFetch() {
   var done = false;
   var fails = 0;
-  var proxies = getProxies();
+  var proxies = getProxies(selectedSource);
   proxies.forEach(function(url, i) {
     fetch(url)
       .then(function(res) {
@@ -278,7 +298,7 @@ function raceFetch() {
 Chart.register(ChartDataLabels);
 var BLUES = ['#0071e3','#2997ff','#5ab4f5','#7ec8f7','#a3d9fb','#c4e5fc','#dceefb','#edf5fd'];
 var TEXT = '#1d1d1f';
-var FLAGS = {'일본':'🇯🇵','한국':'🇰🇷','대만':'🇹🇼','싱가포르':'🇸🇬','말레이시아':'🇲🇾','태국':'🇹🇭','인도네시아':'🇮🇩','베트남':'🇻🇳','필리핀':'🇵🇭','중국':'🇨🇳','홍콩':'🇭🇰','미국':'🇺🇸','브라질':'🇧🇷'};
+var FLAGS = {'일본':'🇯🇵','한국':'🇰🇷','대만':'🇹🇼','싱가포르':'🇸🇬','말레이시아':'🇲🇾','태국':'🇹🇭','인도네시아':'🇮🇩','베트남':'🇻🇳','필리핀':'🇵🇭','중국':'🇨🇳','홍콩':'🇭🇰','미국':'🇺🇸','브라질':'🇧🇷','수도권':'🏙️','비수도권':'🌿'};
 
 function sortDesc(obj) {
   var entries = [];
@@ -353,11 +373,22 @@ function escHtml(s) {
 function sumObj(o) { var t=0; for(var k in o) t+=o[k]; return t; }
 
 function render(d) {
+  var isJp = d.source === 'jp';
+  var fmt = function(n){ return Number(n).toLocaleString(); };
+
+  // 히어로
+  document.getElementById('heroTitle').textContent = isJp ? 'ONnOFF² IN JAPAN' : 'ONnOFF² 한국 팬미팅';
   document.getElementById('heroTotal').textContent = d.total;
+
+  // 스탯 스트립
   document.getElementById('sTotal').textContent = d.total;
   document.getElementById('sPos').textContent = d.posRate + '%';
-  document.getElementById('sJpn').textContent = d.jpnRate + '%';
+  document.getElementById('sRegion').textContent = d.regionRate + '%';
+  document.getElementById('sRegionLabel').textContent = isJp ? '일본 거주' : '수도권';
   document.getElementById('sMsg').textContent = d.msgCount;
+
+  // 차트 카드
+  document.getElementById('countryTitle').textContent = isJp ? '거주 국가·지역' : '거주 지역';
   document.getElementById('surveySubtitle').textContent = d.total + '명의 응답을 기반으로 집계';
   document.getElementById('subCountry').textContent = '응답 ' + sumObj(d.country) + '개';
   document.getElementById('subPart').textContent = '응답 ' + sumObj(d.participate) + '개';
@@ -369,17 +400,33 @@ function render(d) {
   donut('d-price','leg-price', d.price);
   thinBar('b-city', d.city, '#2997ff');
   thinBar('b-prog', d.program, '#0071e3');
+
+  // 수익 시뮬레이션
   var r = d.revenue;
-  var fmt = function(n){ return Number(n).toLocaleString(); };
-  document.getElementById('rAvg').textContent = '¥' + fmt(r.avgTicket) + ' (₩' + fmt(r.avgTicket * 9) + ')';
-  document.getElementById('rStd').textContent = '±' + fmt(r.stdDev) + '명';
-  document.getElementById('rOpt').textContent = '¥' + fmt(r.optRevenue);
-  document.getElementById('rOptLabel').textContent = '낙관적 ~' + fmt(r.optAttendees) + '명';
-  document.getElementById('rOptKRW').textContent = '약 ' + fmt(r.optRevenueKRW) + '만원';
-  document.getElementById('rCon').textContent = '¥' + fmt(r.conRevenue);
-  document.getElementById('rConLabel').textContent = '보수적 ~' + fmt(r.conAttendees) + '명';
-  document.getElementById('rConKRW').textContent = '약 ' + fmt(r.conRevenueKRW) + '만원';
-  document.getElementById('msgSubtitle').textContent = d.msgCount + '개 · 최신순 · 일본어→한국어';
+  if (isJp) {
+    document.getElementById('rAvg').textContent = '¥' + fmt(r.avgTicket) + ' (₩' + fmt(r.avgTicketKRW) + ')';
+    document.getElementById('rStd').textContent = '±' + fmt(r.stdDev) + '명';
+    document.getElementById('rOpt').textContent = '¥' + fmt(r.optRevenue);
+    document.getElementById('rOptLabel').textContent = '낙관적 ~' + fmt(r.optAttendees) + '명';
+    document.getElementById('rOptSub').textContent = '약 ' + fmt(r.optRevenueAlt) + '만원';
+    document.getElementById('rCon').textContent = '¥' + fmt(r.conRevenue);
+    document.getElementById('rConLabel').textContent = '보수적 ~' + fmt(r.conAttendees) + '명';
+    document.getElementById('rConSub').textContent = '약 ' + fmt(r.conRevenueAlt) + '만원';
+  } else {
+    document.getElementById('rAvg').textContent = '₩' + fmt(r.avgTicket);
+    document.getElementById('rStd').textContent = '±' + fmt(r.stdDev) + '명';
+    document.getElementById('rOpt').textContent = '₩' + fmt(r.optRevenue);
+    document.getElementById('rOptLabel').textContent = '낙관적 ~' + fmt(r.optAttendees) + '명';
+    document.getElementById('rOptSub').textContent = '약 ' + fmt(r.optRevenueAlt) + '만원';
+    document.getElementById('rCon').textContent = '₩' + fmt(r.conRevenue);
+    document.getElementById('rConLabel').textContent = '보수적 ~' + fmt(r.conAttendees) + '명';
+    document.getElementById('rConSub').textContent = '약 ' + fmt(r.conRevenueAlt) + '만원';
+  }
+
+  // 메시지
+  document.getElementById('msgSubtitle').textContent = isJp
+    ? d.msgCount + '개 · 최신순 · 일본어→한국어'
+    : d.msgCount + '개 · 최신순';
   var msgHtml = '';
   for (var i = 0; i < d.messages.length; i++) {
     var m = d.messages[i];
