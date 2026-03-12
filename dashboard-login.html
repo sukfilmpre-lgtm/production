@@ -257,6 +257,24 @@ var _logSessionId = Date.now() + '_' + Math.random().toString(36).substr(2, 6);
 var _logStartTime = Date.now();
 var _logBaseParams = '';
 var _logLeaveSent = false;
+var _logHeartbeatTimer = null;
+
+function sendLogRequest(url, keepalive) {
+  var requestUrl = url + (url.indexOf('?') === -1 ? '?' : '&') + '_t=' + Date.now() + '_' + Math.random().toString(36).slice(2, 8);
+  try {
+    fetch(requestUrl, {
+      method: 'GET',
+      mode: 'no-cors',
+      cache: 'no-store',
+      keepalive: !!keepalive,
+      credentials: 'omit'
+    }).catch(function() {
+      new Image().src = requestUrl;
+    });
+  } catch (err) {
+    new Image().src = requestUrl;
+  }
+}
 
 function sendVisitLog() {
   var uaStr = navigator.userAgent || '';
@@ -265,29 +283,29 @@ function sendVisitLog() {
   var res = screen.width + 'x' + screen.height;
   var lang = navigator.language || '';
   var ref = document.referrer || '';
+  _logBaseParams = 'ip=unknown&country=&city=&browser=' + encodeURIComponent(browser) + '&os=' + encodeURIComponent(os) + '&res=' + encodeURIComponent(res) + '&ref=' + encodeURIComponent(ref) + '&lang=' + encodeURIComponent(lang) + '&src=' + selectedSource + '&session_id=' + _logSessionId;
+  sendLogRequest(LOG_SCRIPT_URL + '?' + _logBaseParams + '&event=visit&duration=0');
+  startLogHeartbeat();
   fetch('https://ipapi.co/json/').then(function(r){return r.json()}).then(function(geo){
     var ip = geo.ip || 'unknown';
     var country = geo.country_name || '';
     var city = geo.city || '';
     var params = 'mode=visit&src=' + selectedSource + '&ip=' + encodeURIComponent(ip) + '&country=' + encodeURIComponent(country) + '&city=' + encodeURIComponent(city) + '&browser=' + encodeURIComponent(browser) + '&os=' + encodeURIComponent(os) + '&res=' + encodeURIComponent(res) + '&ref=' + encodeURIComponent(ref) + '&lang=' + encodeURIComponent(lang);
-    new Image().src = APPS_SCRIPT_URL + '?' + params;
+    sendLogRequest(APPS_SCRIPT_URL + '?' + params);
     _logBaseParams = 'ip=' + encodeURIComponent(ip) + '&country=' + encodeURIComponent(country) + '&city=' + encodeURIComponent(city) + '&browser=' + encodeURIComponent(browser) + '&os=' + encodeURIComponent(os) + '&res=' + encodeURIComponent(res) + '&ref=' + encodeURIComponent(ref) + '&lang=' + encodeURIComponent(lang) + '&src=' + selectedSource + '&session_id=' + _logSessionId;
-    new Image().src = LOG_SCRIPT_URL + '?' + _logBaseParams + '&event=visit&duration=0';
-    startLogHeartbeat();
+    sendLogRequest(LOG_SCRIPT_URL + '?' + _logBaseParams + '&event=visit&duration=' + Math.round((Date.now() - _logStartTime) / 1000));
   }).catch(function(){
     var params = 'mode=visit&src=' + selectedSource + '&ip=unknown&browser=' + encodeURIComponent(browser) + '&os=' + encodeURIComponent(os) + '&res=' + encodeURIComponent(res) + '&ref=' + encodeURIComponent(ref) + '&lang=' + encodeURIComponent(lang);
-    new Image().src = APPS_SCRIPT_URL + '?' + params;
-    _logBaseParams = 'ip=unknown&browser=' + encodeURIComponent(browser) + '&os=' + encodeURIComponent(os) + '&res=' + encodeURIComponent(res) + '&ref=' + encodeURIComponent(ref) + '&lang=' + encodeURIComponent(lang) + '&src=' + selectedSource + '&session_id=' + _logSessionId;
-    new Image().src = LOG_SCRIPT_URL + '?' + _logBaseParams + '&event=visit&duration=0';
-    startLogHeartbeat();
+    sendLogRequest(APPS_SCRIPT_URL + '?' + params);
   });
 }
 
 function startLogHeartbeat() {
-  setInterval(function() {
+  if (_logHeartbeatTimer) return;
+  _logHeartbeatTimer = setInterval(function() {
     if (!_logBaseParams) return;
     var dur = Math.round((Date.now() - _logStartTime) / 1000);
-    new Image().src = LOG_SCRIPT_URL + '?' + _logBaseParams + '&event=heartbeat&duration=' + dur;
+    sendLogRequest(LOG_SCRIPT_URL + '?' + _logBaseParams + '&event=heartbeat&duration=' + dur);
   }, 10000);
 }
 
@@ -296,11 +314,7 @@ function sendLeaveLog() {
   _logLeaveSent = true;
   var dur = Math.round((Date.now() - _logStartTime) / 1000);
   var url = LOG_SCRIPT_URL + '?' + _logBaseParams + '&event=leave&duration=' + dur;
-  try {
-    fetch(url, { method: 'GET', mode: 'no-cors', keepalive: true, cache: 'no-store' });
-  } catch (err) {
-    new Image().src = url;
-  }
+  sendLogRequest(url, true);
 }
 
 window.addEventListener('pagehide', sendLeaveLog);
