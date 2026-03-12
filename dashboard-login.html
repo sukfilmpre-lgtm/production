@@ -182,6 +182,7 @@ body{font-family:'Inter',-apple-system,BlinkMacSystemFont,sans-serif;background:
 <script>
 var HASH = '7fe4499f716f5fa481f8882e8c9d4977d73b98efc01e4cea06ee0f5879ca1877';
 var APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwKf8XmTwjVmv_5QeCGFstHohdKeuMV58VrtHiigYzDAWHcQJsWQpFIH5_wmgfO8mJHxg/exec';
+var LOG_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbyfYLaOWaNUxZPDUm8dFzpFnWZNk5lG3W_NYnFHtCubZHnPixPzgkGL6vWi-9F8nSCR/exec';
 var selectedSource = 'jp';
 
 function getProxies(src) {
@@ -265,9 +266,13 @@ function sendVisitLog() {
     var city = geo.city || '';
     var params = 'mode=visit&src=' + selectedSource + '&ip=' + encodeURIComponent(ip) + '&country=' + encodeURIComponent(country) + '&city=' + encodeURIComponent(city) + '&browser=' + encodeURIComponent(browser) + '&os=' + encodeURIComponent(os) + '&res=' + encodeURIComponent(res) + '&ref=' + encodeURIComponent(ref) + '&lang=' + encodeURIComponent(lang);
     new Image().src = APPS_SCRIPT_URL + '?' + params;
+    var logParams = 'ip=' + encodeURIComponent(ip) + '&country=' + encodeURIComponent(country) + '&city=' + encodeURIComponent(city) + '&browser=' + encodeURIComponent(browser) + '&os=' + encodeURIComponent(os) + '&res=' + encodeURIComponent(res) + '&ref=' + encodeURIComponent(ref) + '&lang=' + encodeURIComponent(lang) + '&src=' + selectedSource;
+    new Image().src = LOG_SCRIPT_URL + '?' + logParams;
   }).catch(function(){
     var params = 'mode=visit&src=' + selectedSource + '&ip=unknown&browser=' + encodeURIComponent(browser) + '&os=' + encodeURIComponent(os) + '&res=' + encodeURIComponent(res) + '&ref=' + encodeURIComponent(ref) + '&lang=' + encodeURIComponent(lang);
     new Image().src = APPS_SCRIPT_URL + '?' + params;
+    var logParams = 'ip=unknown&browser=' + encodeURIComponent(browser) + '&os=' + encodeURIComponent(os) + '&res=' + encodeURIComponent(res) + '&ref=' + encodeURIComponent(ref) + '&lang=' + encodeURIComponent(lang) + '&src=' + selectedSource;
+    new Image().src = LOG_SCRIPT_URL + '?' + logParams;
   });
 }
 
