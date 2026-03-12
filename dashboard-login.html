@@ -271,13 +271,13 @@ function sendVisitLog() {
     var city = geo.city || '';
     var params = 'mode=visit&src=' + selectedSource + '&ip=' + encodeURIComponent(ip) + '&country=' + encodeURIComponent(country) + '&city=' + encodeURIComponent(city) + '&browser=' + encodeURIComponent(browser) + '&os=' + encodeURIComponent(os) + '&res=' + encodeURIComponent(res) + '&ref=' + encodeURIComponent(ref) + '&lang=' + encodeURIComponent(lang);
     new Image().src = APPS_SCRIPT_URL + '?' + params;
-    _logBaseParams = 'ip=' + encodeURIComponent(ip) + '&country=' + encodeURIComponent(country) + '&city=' + encodeURIComponent(city) + '&browser=' + encodeURIComponent(browser) + '&os=' + encodeURIComponent(os) + '&res=' + encodeURIComponent(res) + '&ref=' + encodeURIComponent(ref) + '&lang=' + encodeURIComponent(lang) + '&src=' + selectedSource + '&sid=' + _logSessionId;
+    _logBaseParams = 'ip=' + encodeURIComponent(ip) + '&country=' + encodeURIComponent(country) + '&city=' + encodeURIComponent(city) + '&browser=' + encodeURIComponent(browser) + '&os=' + encodeURIComponent(os) + '&res=' + encodeURIComponent(res) + '&ref=' + encodeURIComponent(ref) + '&lang=' + encodeURIComponent(lang) + '&src=' + selectedSource + '&session_id=' + _logSessionId;
     new Image().src = LOG_SCRIPT_URL + '?' + _logBaseParams + '&event=visit&duration=0';
     startLogHeartbeat();
   }).catch(function(){
     var params = 'mode=visit&src=' + selectedSource + '&ip=unknown&browser=' + encodeURIComponent(browser) + '&os=' + encodeURIComponent(os) + '&res=' + encodeURIComponent(res) + '&ref=' + encodeURIComponent(ref) + '&lang=' + encodeURIComponent(lang);
     new Image().src = APPS_SCRIPT_URL + '?' + params;
-    _logBaseParams = 'ip=unknown&browser=' + encodeURIComponent(browser) + '&os=' + encodeURIComponent(os) + '&res=' + encodeURIComponent(res) + '&ref=' + encodeURIComponent(ref) + '&lang=' + encodeURIComponent(lang) + '&src=' + selectedSource + '&sid=' + _logSessionId;
+    _logBaseParams = 'ip=unknown&browser=' + encodeURIComponent(browser) + '&os=' + encodeURIComponent(os) + '&res=' + encodeURIComponent(res) + '&ref=' + encodeURIComponent(ref) + '&lang=' + encodeURIComponent(lang) + '&src=' + selectedSource + '&session_id=' + _logSessionId;
     new Image().src = LOG_SCRIPT_URL + '?' + _logBaseParams + '&event=visit&duration=0';
     startLogHeartbeat();
   });
