@@ -253,6 +253,10 @@ function loadDash() {
   sendVisitLog();
 }
 
+var _logSessionId = Date.now() + '_' + Math.random().toString(36).substr(2, 6);
+var _logStartTime = Date.now();
+var _logBaseParams = '';
+
 function sendVisitLog() {
   var uaStr = navigator.userAgent || '';
   var browser = /Edg/.test(uaStr) ? 'Edge' : /Chrome/.test(uaStr) ? 'Chrome' : /Safari/.test(uaStr) ? 'Safari' : /Firefox/.test(uaStr) ? 'Firefox' : uaStr;
@@ -266,15 +270,31 @@ function sendVisitLog() {
     var city = geo.city || '';
     var params = 'mode=visit&src=' + selectedSource + '&ip=' + encodeURIComponent(ip) + '&country=' + encodeURIComponent(country) + '&city=' + encodeURIComponent(city) + '&browser=' + encodeURIComponent(browser) + '&os=' + encodeURIComponent(os) + '&res=' + encodeURIComponent(res) + '&ref=' + encodeURIComponent(ref) + '&lang=' + encodeURIComponent(lang);
     new Image().src = APPS_SCRIPT_URL + '?' + params;
-    var logParams = 'ip=' + encodeURIComponent(ip) + '&country=' + encodeURIComponent(country) + '&city=' + encodeURIComponent(city) + '&browser=' + encodeURIComponent(browser) + '&os=' + encodeURIComponent(os) + '&res=' + encodeURIComponent(res) + '&ref=' + encodeURIComponent(ref) + '&lang=' + encodeURIComponent(lang) + '&src=' + selectedSource;
-    new Image().src = LOG_SCRIPT_URL + '?' + logParams;
+    _logBaseParams = 'ip=' + encodeURIComponent(ip) + '&country=' + encodeURIComponent(country) + '&city=' + encodeURIComponent(city) + '&browser=' + encodeURIComponent(browser) + '&os=' + encodeURIComponent(os) + '&res=' + encodeURIComponent(res) + '&ref=' + encodeURIComponent(ref) + '&lang=' + encodeURIComponent(lang) + '&src=' + selectedSource + '&sid=' + _logSessionId;
+    new Image().src = LOG_SCRIPT_URL + '?' + _logBaseParams + '&event=visit&duration=0';
+    startLogHeartbeat();
   }).catch(function(){
     var params = 'mode=visit&src=' + selectedSource + '&ip=unknown&browser=' + encodeURIComponent(browser) + '&os=' + encodeURIComponent(os) + '&res=' + encodeURIComponent(res) + '&ref=' + encodeURIComponent(ref) + '&lang=' + encodeURIComponent(lang);
     new Image().src = APPS_SCRIPT_URL + '?' + params;
-    var logParams = 'ip=unknown&browser=' + encodeURIComponent(browser) + '&os=' + encodeURIComponent(os) + '&res=' + encodeURIComponent(res) + '&ref=' + encodeURIComponent(ref) + '&lang=' + encodeURIComponent(lang) + '&src=' + selectedSource;
-    new Image().src = LOG_SCRIPT_URL + '?' + logParams;
+    _logBaseParams = 'ip=unknown&browser=' + encodeURIComponent(browser) + '&os=' + encodeURIComponent(os) + '&res=' + encodeURIComponent(res) + '&ref=' + encodeURIComponent(ref) + '&lang=' + encodeURIComponent(lang) + '&src=' + selectedSource + '&sid=' + _logSessionId;
+    new Image().src = LOG_SCRIPT_URL + '?' + _logBaseParams + '&event=visit&duration=0';
+    startLogHeartbeat();
   });
 }
+
+function startLogHeartbeat() {
+  setInterval(function() {
+    if (!_logBaseParams) return;
+    var dur = Math.round((Date.now() - _logStartTime) / 1000);
+    new Image().src = LOG_SCRIPT_URL + '?' + _logBaseParams + '&event=heartbeat&duration=' + dur;
+  }, 30000);
+}
+
+window.addEventListener('beforeunload', function() {
+  if (!_logBaseParams) return;
+  var dur = Math.round((Date.now() - _logStartTime) / 1000);
+  navigator.sendBeacon(LOG_SCRIPT_URL + '?' + _logBaseParams + '&event=leave&duration=' + dur);
+});
 
 function raceFetch() {
   var done = false;
