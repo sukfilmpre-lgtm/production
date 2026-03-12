@@ -259,21 +259,9 @@ var _logBaseParams = '';
 var _logLeaveSent = false;
 var _logHeartbeatTimer = null;
 
-function sendLogRequest(url, keepalive) {
+function sendLogRequest(url) {
   var requestUrl = url + (url.indexOf('?') === -1 ? '?' : '&') + '_t=' + Date.now() + '_' + Math.random().toString(36).slice(2, 8);
-  try {
-    fetch(requestUrl, {
-      method: 'GET',
-      mode: 'no-cors',
-      cache: 'no-store',
-      keepalive: !!keepalive,
-      credentials: 'omit'
-    }).catch(function() {
-      new Image().src = requestUrl;
-    });
-  } catch (err) {
-    new Image().src = requestUrl;
-  }
+  new Image().src = requestUrl;
 }
 
 function sendVisitLog() {
@@ -313,12 +301,19 @@ function sendLeaveLog() {
   if (_logLeaveSent || !_logBaseParams) return;
   _logLeaveSent = true;
   var dur = Math.round((Date.now() - _logStartTime) / 1000);
-  var url = LOG_SCRIPT_URL + '?' + _logBaseParams + '&event=leave&duration=' + dur;
-  sendLogRequest(url, true);
+  var url = LOG_SCRIPT_URL + '?' + _logBaseParams + '&event=leave&duration=' + dur + '&_t=' + Date.now();
+  if (navigator.sendBeacon) {
+    navigator.sendBeacon(url);
+  } else {
+    new Image().src = url;
+  }
 }
 
 window.addEventListener('pagehide', sendLeaveLog);
 window.addEventListener('beforeunload', sendLeaveLog);
+document.addEventListener('visibilitychange', function() {
+  if (document.visibilityState === 'hidden') sendLeaveLog();
+});
 
 function raceFetch() {
   var done = false;
