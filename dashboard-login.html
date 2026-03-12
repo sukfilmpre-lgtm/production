@@ -259,9 +259,9 @@ var _logBaseParams = '';
 var _logLeaveSent = false;
 var _logHeartbeatTimer = null;
 
-function sendLogRequest(url) {
+function sendLogRequest(url, keepalive) {
   var requestUrl = url + (url.indexOf('?') === -1 ? '?' : '&') + '_t=' + Date.now() + '_' + Math.random().toString(36).slice(2, 8);
-  new Image().src = requestUrl;
+  fetch(requestUrl, { mode: 'cors', credentials: 'omit', cache: 'no-store', keepalive: !!keepalive }).catch(function() {});
 }
 
 function sendVisitLog() {
@@ -302,11 +302,7 @@ function sendLeaveLog() {
   _logLeaveSent = true;
   var dur = Math.round((Date.now() - _logStartTime) / 1000);
   var url = LOG_SCRIPT_URL + '?' + _logBaseParams + '&event=leave&duration=' + dur + '&_t=' + Date.now();
-  if (navigator.sendBeacon) {
-    navigator.sendBeacon(url);
-  } else {
-    new Image().src = url;
-  }
+  sendLogRequest(url, true);
 }
 
 window.addEventListener('pagehide', sendLeaveLog);
