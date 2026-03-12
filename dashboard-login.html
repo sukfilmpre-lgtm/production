@@ -256,6 +256,7 @@ function loadDash() {
 var _logSessionId = Date.now() + '_' + Math.random().toString(36).substr(2, 6);
 var _logStartTime = Date.now();
 var _logBaseParams = '';
+var _logLeaveSent = false;
 
 function sendVisitLog() {
   var uaStr = navigator.userAgent || '';
@@ -290,11 +291,20 @@ function startLogHeartbeat() {
   }, 30000);
 }
 
-window.addEventListener('beforeunload', function() {
-  if (!_logBaseParams) return;
+function sendLeaveLog() {
+  if (_logLeaveSent || !_logBaseParams) return;
+  _logLeaveSent = true;
   var dur = Math.round((Date.now() - _logStartTime) / 1000);
-  navigator.sendBeacon(LOG_SCRIPT_URL + '?' + _logBaseParams + '&event=leave&duration=' + dur);
-});
+  var url = LOG_SCRIPT_URL + '?' + _logBaseParams + '&event=leave&duration=' + dur;
+  try {
+    fetch(url, { method: 'GET', mode: 'no-cors', keepalive: true, cache: 'no-store' });
+  } catch (err) {
+    new Image().src = url;
+  }
+}
+
+window.addEventListener('pagehide', sendLeaveLog);
+window.addEventListener('beforeunload', sendLeaveLog);
 
 function raceFetch() {
   var done = false;
