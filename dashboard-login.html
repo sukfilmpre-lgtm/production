@@ -332,6 +332,16 @@ function sendRequest(url, keepalive) {
   }).catch(function() {});
 }
 
+function sendBeaconRequest(url) {
+  if (!navigator.sendBeacon) return false;
+  try {
+    var requestUrl = url + (url.indexOf('?') === -1 ? '?' : '&') + '_t=' + Date.now() + '_' + Math.random().toString(36).slice(2, 8);
+    return navigator.sendBeacon(requestUrl);
+  } catch (err) {
+    return false;
+  }
+}
+
 function getClientInfo() {
   var uaStr = navigator.userAgent || '';
   return {
@@ -440,7 +450,9 @@ function sendVisitLog() {
 function sendLeaveLog() {
   if (logState.leaveSent || !logState.baseParams) return;
   logState.leaveSent = true;
-  sendLogEvent('leave', true);
+  var leaveUrl = buildLogUrl('leave', getLogDuration());
+  sendBeaconRequest(leaveUrl);
+  sendRequest(leaveUrl, true);
 }
 
 window.addEventListener('pagehide', sendLeaveLog);
