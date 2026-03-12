@@ -184,6 +184,28 @@ var HASH = '7fe4499f716f5fa481f8882e8c9d4977d73b98efc01e4cea06ee0f5879ca1877';
 var APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwKf8XmTwjVmv_5QeCGFstHohdKeuMV58VrtHiigYzDAWHcQJsWQpFIH5_wmgfO8mJHxg/exec';
 var LOG_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbycrtkkR8cCnPKHqoVaVIY_YN3jQFd_O6dlnLNGweQzOrf58kcCqEVArO_fotPM90EMpg/exec';
 var selectedSource = 'jp';
+var ui = {};
+var charts = {};
+
+function $(id) {
+  return ui[id] || (ui[id] = document.getElementById(id));
+}
+
+function setText(id, value) {
+  $(id).textContent = value;
+}
+
+function setHtml(id, html) {
+  $(id).innerHTML = html;
+}
+
+function mountChart(id, config) {
+  if (charts[id]) {
+    charts[id].destroy();
+  }
+  charts[id] = new Chart($(id), config);
+  return charts[id];
+}
 
 function getProxies(src) {
   var base = APPS_SCRIPT_URL + '?source=' + src + '&_t=' + Date.now();
@@ -196,15 +218,15 @@ function getProxies(src) {
 
 function pickSource(src) {
   selectedSource = src;
-  document.getElementById('btnJp').className = 'source-btn' + (src === 'jp' ? ' active' : '');
-  document.getElementById('btnKr').className = 'source-btn' + (src === 'kr' ? ' active' : '');
+  $('btnJp').className = 'source-btn' + (src === 'jp' ? ' active' : '');
+  $('btnKr').className = 'source-btn' + (src === 'kr' ? ' active' : '');
 }
 
 // 카카오톡 인앱브라우저 우회
 var ua = navigator.userAgent || '';
 var isKakao = /KAKAOTALK/i.test(ua);
 if (isKakao) {
-  document.getElementById('loginScreen').style.display = 'none';
+  $('loginScreen').style.display = 'none';
   if (/android/i.test(ua)) location.href = 'intent://' + location.host + location.pathname + '#Intent;scheme=https;package=com.android.chrome;end';
   else location.href = 'kakaotalk://web/openExternal?url=' + encodeURIComponent(location.href);
 }
@@ -216,29 +238,166 @@ async function sha256(t) {
 }
 
 function togglePw() {
-  var inp = document.getElementById('pwInput');
-  var on = document.getElementById('eyeOn');
-  var off = document.getElementById('eyeOff');
+  var inp = $('pwInput');
+  var on = $('eyeOn');
+  var off = $('eyeOff');
   if (inp.type === 'text') { inp.type = 'password'; on.style.display = 'none'; off.style.display = ''; }
   else { inp.type = 'text'; on.style.display = ''; off.style.display = 'none'; }
 }
 
 async function tryLogin() {
-  var pw = document.getElementById('pwInput').value;
+  var pw = $('pwInput').value;
   if (await sha256(pw) === HASH) {
     sessionStorage.setItem('auth', '1');
     sessionStorage.setItem('source', selectedSource);
     location.reload();
     return;
   } else {
-    var inp = document.getElementById('pwInput');
+    var inp = $('pwInput');
     inp.classList.add('error');
-    document.getElementById('errMsg').textContent = '비밀번호가 틀렸습니다';
+    setText('errMsg', '비밀번호가 틀렸습니다');
     setTimeout(function(){ inp.classList.remove('error'); }, 500);
   }
 }
 
-document.getElementById('pwInput').addEventListener('keydown', function(e){ if (e.key === 'Enter') tryLogin(); });
+$('pwInput').addEventListener('keydown', function(e){ if (e.key === 'Enter') tryLogin(); });
+
+var LOG_HEARTBEAT_MS = 10000;
+var logState = createLogState();
+
+function createLogState() {
+  return {
+    sessionId: '',
+    startTime: 0,
+    baseParams: null,
+    heartbeatTimer: null,
+    leaveSent: false
+  };
+}
+
+function buildSessionId() {
+  return Date.now() + '_' + Math.random().toString(36).substr(2, 6);
+}
+
+function resetLogState() {
+  if (logState.heartbeatTimer) {
+    clearInterval(logState.heartbeatTimer);
+  }
+  logState = {
+    sessionId: buildSessionId(),
+    startTime: Date.now(),
+    baseParams: null,
+    heartbeatTimer: null,
+    leaveSent: false
+  };
+}
+
+function getLogDuration() {
+  return Math.max(0, Math.round((Date.now() - logState.startTime) / 1000));
+}
+
+function toQuery(params) {
+  var search = new URLSearchParams();
+  Object.keys(params).forEach(function(key) {
+    if (params[key] === undefined || params[key] === null) return;
+    search.set(key, String(params[key]));
+  });
+  return search.toString();
+}
+
+function buildLogUrl(eventName, duration) {
+  return LOG_SCRIPT_URL + '?' + toQuery({
+    ip: logState.baseParams.ip,
+    country: logState.baseParams.country,
+    city: logState.baseParams.city,
+    browser: logState.baseParams.browser,
+    os: logState.baseParams.os,
+    res: logState.baseParams.res,
+    ref: logState.baseParams.ref,
+    lang: logState.baseParams.lang,
+    src: logState.baseParams.src,
+    session_id: logState.sessionId,
+    event: eventName,
+    duration: duration
+  });
+}
+
+function sendRequest(url, keepalive) {
+  var requestUrl = url + (url.indexOf('?') === -1 ? '?' : '&') + '_t=' + Date.now() + '_' + Math.random().toString(36).slice(2, 8);
+  return fetch(requestUrl, {
+    mode: 'cors',
+    credentials: 'omit',
+    cache: 'no-store',
+    keepalive: !!keepalive
+  }).catch(function() {});
+}
+
+function getClientInfo() {
+  var uaStr = navigator.userAgent || '';
+  return {
+    browser: /Edg/.test(uaStr) ? 'Edge' : /Chrome/.test(uaStr) ? 'Chrome' : /Safari/.test(uaStr) ? 'Safari' : /Firefox/.test(uaStr) ? 'Firefox' : uaStr,
+    os: /iPhone|iPad/.test(uaStr) ? 'iOS' : /Android/.test(uaStr) ? 'Android' : /Mac/.test(uaStr) ? 'macOS' : /Windows/.test(uaStr) ? 'Windows' : /Linux/.test(uaStr) ? 'Linux' : 'Unknown',
+    res: screen.width + 'x' + screen.height,
+    lang: navigator.language || '',
+    ref: document.referrer || '',
+    src: selectedSource
+  };
+}
+
+function setLogBaseParams(info) {
+  logState.baseParams = {
+    ip: info.ip || 'unknown',
+    country: info.country || '',
+    city: info.city || '',
+    browser: info.browser || '',
+    os: info.os || '',
+    res: info.res || '',
+    ref: info.ref || '',
+    lang: info.lang || '',
+    src: info.src || selectedSource
+  };
+}
+
+function sendLegacyVisit(clientInfo, geoInfo) {
+  sendRequest(APPS_SCRIPT_URL + '?' + toQuery({
+    mode: 'visit',
+    src: clientInfo.src,
+    ip: geoInfo.ip || 'unknown',
+    country: geoInfo.country || '',
+    city: geoInfo.city || '',
+    browser: clientInfo.browser,
+    os: clientInfo.os,
+    res: clientInfo.res,
+    ref: clientInfo.ref,
+    lang: clientInfo.lang
+  }));
+}
+
+function sendLogEvent(eventName, keepalive) {
+  if (!logState.baseParams) return;
+  sendRequest(buildLogUrl(eventName, getLogDuration()), keepalive);
+}
+
+function startLogHeartbeat() {
+  if (logState.heartbeatTimer || !logState.baseParams) return;
+  logState.heartbeatTimer = setInterval(function() {
+    sendLogEvent('heartbeat');
+  }, LOG_HEARTBEAT_MS);
+}
+
+function fetchGeoInfo() {
+  return fetch('https://ipapi.co/json/')
+    .then(function(r) { return r.json(); })
+    .then(function(geo) {
+      return {
+        ip: geo.ip || 'unknown',
+        country: geo.country_name || '',
+        city: geo.city || ''
+      };
+    });
+}
+
+resetLogState();
 
 // 자동 로그인
 if (sessionStorage.getItem('auth') === '1' && !isKakao) {
@@ -247,62 +406,41 @@ if (sessionStorage.getItem('auth') === '1' && !isKakao) {
 }
 
 function loadDash() {
-  document.getElementById('loginScreen').classList.add('hidden');
-  document.getElementById('loader').classList.remove('hidden');
+  resetLogState();
+  $('loginScreen').classList.add('hidden');
+  $('loader').classList.remove('hidden');
   raceFetch();
   sendVisitLog();
 }
 
-var _logSessionId = Date.now() + '_' + Math.random().toString(36).substr(2, 6);
-var _logStartTime = Date.now();
-var _logBaseParams = '';
-var _logLeaveSent = false;
-var _logHeartbeatTimer = null;
-
-function sendLogRequest(url, keepalive) {
-  var requestUrl = url + (url.indexOf('?') === -1 ? '?' : '&') + '_t=' + Date.now() + '_' + Math.random().toString(36).slice(2, 8);
-  fetch(requestUrl, { mode: 'cors', credentials: 'omit', cache: 'no-store', keepalive: !!keepalive }).catch(function() {});
-}
-
 function sendVisitLog() {
-  var uaStr = navigator.userAgent || '';
-  var browser = /Edg/.test(uaStr) ? 'Edge' : /Chrome/.test(uaStr) ? 'Chrome' : /Safari/.test(uaStr) ? 'Safari' : /Firefox/.test(uaStr) ? 'Firefox' : uaStr;
-  var os = /iPhone|iPad/.test(uaStr) ? 'iOS' : /Android/.test(uaStr) ? 'Android' : /Mac/.test(uaStr) ? 'macOS' : /Windows/.test(uaStr) ? 'Windows' : /Linux/.test(uaStr) ? 'Linux' : 'Unknown';
-  var res = screen.width + 'x' + screen.height;
-  var lang = navigator.language || '';
-  var ref = document.referrer || '';
-  _logBaseParams = 'ip=unknown&country=&city=&browser=' + encodeURIComponent(browser) + '&os=' + encodeURIComponent(os) + '&res=' + encodeURIComponent(res) + '&ref=' + encodeURIComponent(ref) + '&lang=' + encodeURIComponent(lang) + '&src=' + selectedSource + '&session_id=' + _logSessionId;
-  sendLogRequest(LOG_SCRIPT_URL + '?' + _logBaseParams + '&event=visit&duration=0');
+  var clientInfo = getClientInfo();
+  setLogBaseParams(clientInfo);
+  sendLogEvent('visit');
   startLogHeartbeat();
-  fetch('https://ipapi.co/json/').then(function(r){return r.json()}).then(function(geo){
-    var ip = geo.ip || 'unknown';
-    var country = geo.country_name || '';
-    var city = geo.city || '';
-    var params = 'mode=visit&src=' + selectedSource + '&ip=' + encodeURIComponent(ip) + '&country=' + encodeURIComponent(country) + '&city=' + encodeURIComponent(city) + '&browser=' + encodeURIComponent(browser) + '&os=' + encodeURIComponent(os) + '&res=' + encodeURIComponent(res) + '&ref=' + encodeURIComponent(ref) + '&lang=' + encodeURIComponent(lang);
-    sendLogRequest(APPS_SCRIPT_URL + '?' + params);
-    _logBaseParams = 'ip=' + encodeURIComponent(ip) + '&country=' + encodeURIComponent(country) + '&city=' + encodeURIComponent(city) + '&browser=' + encodeURIComponent(browser) + '&os=' + encodeURIComponent(os) + '&res=' + encodeURIComponent(res) + '&ref=' + encodeURIComponent(ref) + '&lang=' + encodeURIComponent(lang) + '&src=' + selectedSource + '&session_id=' + _logSessionId;
-    sendLogRequest(LOG_SCRIPT_URL + '?' + _logBaseParams + '&event=visit&duration=' + Math.round((Date.now() - _logStartTime) / 1000));
-  }).catch(function(){
-    var params = 'mode=visit&src=' + selectedSource + '&ip=unknown&browser=' + encodeURIComponent(browser) + '&os=' + encodeURIComponent(os) + '&res=' + encodeURIComponent(res) + '&ref=' + encodeURIComponent(ref) + '&lang=' + encodeURIComponent(lang);
-    sendLogRequest(APPS_SCRIPT_URL + '?' + params);
+  fetchGeoInfo().then(function(geoInfo) {
+    setLogBaseParams({
+      ip: geoInfo.ip,
+      country: geoInfo.country,
+      city: geoInfo.city,
+      browser: clientInfo.browser,
+      os: clientInfo.os,
+      res: clientInfo.res,
+      ref: clientInfo.ref,
+      lang: clientInfo.lang,
+      src: clientInfo.src
+    });
+    sendLegacyVisit(clientInfo, geoInfo);
+    sendLogEvent('visit');
+  }).catch(function() {
+    sendLegacyVisit(clientInfo, { ip: 'unknown' });
   });
 }
 
-function startLogHeartbeat() {
-  if (_logHeartbeatTimer) return;
-  _logHeartbeatTimer = setInterval(function() {
-    if (!_logBaseParams) return;
-    var dur = Math.round((Date.now() - _logStartTime) / 1000);
-    sendLogRequest(LOG_SCRIPT_URL + '?' + _logBaseParams + '&event=heartbeat&duration=' + dur);
-  }, 10000);
-}
-
 function sendLeaveLog() {
-  if (_logLeaveSent || !_logBaseParams) return;
-  _logLeaveSent = true;
-  var dur = Math.round((Date.now() - _logStartTime) / 1000);
-  var url = LOG_SCRIPT_URL + '?' + _logBaseParams + '&event=leave&duration=' + dur + '&_t=' + Date.now();
-  sendLogRequest(url, true);
+  if (logState.leaveSent || !logState.baseParams) return;
+  logState.leaveSent = true;
+  sendLogEvent('leave', true);
 }
 
 window.addEventListener('pagehide', sendLeaveLog);
@@ -328,7 +466,7 @@ function raceFetch() {
         console.log('Proxy ' + i + ' failed:', e.message);
         fails++;
         if (fails >= proxies.length && !done) {
-          document.getElementById('loader').innerHTML = '<p style="color:#ff3b30">데이터 로딩 오류<br><small style="color:#86868b">모든 프록시 실패 · 잠시 후 다시 시도해주세요</small><br><button onclick="location.reload()" style="margin-top:12px;padding:8px 20px;border:1.5px solid #0071e3;background:#fff;color:#0071e3;border-radius:8px;font-size:13px;cursor:pointer">새로고침</button></p>';
+          setHtml('loader', '<p style="color:#ff3b30">데이터 로딩 오류<br><small style="color:#86868b">모든 프록시 실패 · 잠시 후 다시 시도해주세요</small><br><button onclick="location.reload()" style="margin-top:12px;padding:8px 20px;border:1.5px solid #0071e3;background:#fff;color:#0071e3;border-radius:8px;font-size:13px;cursor:pointer">새로고침</button></p>');
         }
       });
   });
@@ -354,7 +492,7 @@ function donut(id, legendId, obj) {
   var labels = s.labels, values = s.values;
   var total = values.reduce(function(a,b){return a+b;},0);
   var colors = BLUES.slice(0, labels.length);
-  new Chart(document.getElementById(id), {
+  mountChart(id, {
     type:'doughnut',
     data:{labels:labels, datasets:[{data:values, backgroundColor:colors, borderWidth:2, borderColor:'#f5f5f7', hoverOffset:3}]},
     options:{cutout:'78%', responsive:true, maintainAspectRatio:true, plugins:{legend:{display:false}, datalabels:{display:false}}}
@@ -364,7 +502,7 @@ function donut(id, legendId, obj) {
     var pct = (values[i]/total*100).toFixed(1);
     html += '<div class="item"><span class="dot" style="background:'+colors[i]+'"></span><span>'+labels[i]+'</span><span class="val">'+values[i]+' ('+pct+'%)</span></div>';
   }
-  document.getElementById(legendId).innerHTML = html;
+  setHtml(legendId, html);
 }
 
 function thinBar(id, obj, color) {
@@ -372,9 +510,9 @@ function thinBar(id, obj, color) {
   var labels = s.labels, values = s.values;
   var total = values.reduce(function(a,b){return a+b;},0);
   var h = Math.max(labels.length * 38, 120);
-  var el = document.getElementById(id);
+  var el = $(id);
   el.parentElement.style.height = h + 'px';
-  new Chart(el, {
+  mountChart(id, {
     type:'bar',
     data:{labels:labels, datasets:[{data:values, backgroundColor:color||'#0071e3', borderRadius:3, barThickness:14}]},
     options:{
@@ -412,61 +550,55 @@ function escHtml(s) {
 
 function sumObj(o) { var t=0; for(var k in o) t+=o[k]; return t; }
 
-function render(d) {
-  var isJp = d.source === 'jp';
-  var fmt = function(n){ return Number(n).toLocaleString(); };
+function renderHero(d, isJp) {
+  setText('heroTitle', isJp ? 'ONnOFF³ IN JAPAN' : 'ONnOFF³ 한국 팬미팅');
+  setText('heroTotal', d.total);
+}
 
-  // 히어로
-  document.getElementById('heroTitle').textContent = isJp ? 'ONnOFF³ IN JAPAN' : 'ONnOFF³ 한국 팬미팅';
-  document.getElementById('heroTotal').textContent = d.total;
+function renderStats(d, isJp) {
+  setText('sTotal', d.total);
+  setText('sPos', d.posRate + '%');
+  setText('sRegion', d.regionRate + '%');
+  setText('sRegionLabel', isJp ? '일본 거주' : '수도권');
+  setText('sMsg', d.msgCount);
+}
 
-  // 스탯 스트립
-  document.getElementById('sTotal').textContent = d.total;
-  document.getElementById('sPos').textContent = d.posRate + '%';
-  document.getElementById('sRegion').textContent = d.regionRate + '%';
-  document.getElementById('sRegionLabel').textContent = isJp ? '일본 거주' : '수도권';
-  document.getElementById('sMsg').textContent = d.msgCount;
-
-  // 차트 카드
-  document.getElementById('countryTitle').textContent = isJp ? '거주 국가·지역' : '거주 지역';
-  document.getElementById('surveySubtitle').textContent = d.total + '명의 응답을 기반으로 집계';
-  document.getElementById('subCountry').textContent = '응답 ' + sumObj(d.country) + '개';
-  document.getElementById('subPart').textContent = '응답 ' + sumObj(d.participate) + '개';
-  document.getElementById('subCity').textContent = '복수선택 · 응답 ' + sumObj(d.city) + '개';
-  document.getElementById('subPrice').textContent = '1인 기준 · 응답 ' + sumObj(d.price) + '개';
-  document.getElementById('subProg').textContent = '복수선택 · 응답 ' + sumObj(d.program) + '개';
+function renderCharts(d, isJp) {
+  setText('countryTitle', isJp ? '거주 국가·지역' : '거주 지역');
+  setText('surveySubtitle', d.total + '명의 응답을 기반으로 집계');
+  setText('subCountry', '응답 ' + sumObj(d.country) + '개');
+  setText('subPart', '응답 ' + sumObj(d.participate) + '개');
+  setText('subCity', '복수선택 · 응답 ' + sumObj(d.city) + '개');
+  setText('subPrice', '1인 기준 · 응답 ' + sumObj(d.price) + '개');
+  setText('subProg', '복수선택 · 응답 ' + sumObj(d.program) + '개');
   donut('d-country','leg-country', d.country);
   donut('d-part','leg-part', d.participate);
   donut('d-price','leg-price', d.price);
   thinBar('b-city', d.city, '#2997ff');
   thinBar('b-prog', d.program, '#0071e3');
+}
 
-  // 수익 시뮬레이션
-  var r = d.revenue;
+function renderRevenue(r, isJp, fmt) {
+  setText('rStd', '±' + fmt(r.stdDev) + '명');
+  setText('rOptLabel', '낙관적 ~' + fmt(r.optAttendees) + '명');
+  setText('rOptSub', '약 ' + fmt(r.optRevenueAlt) + '만원');
+  setText('rConLabel', '보수적 ~' + fmt(r.conAttendees) + '명');
+  setText('rConSub', '약 ' + fmt(r.conRevenueAlt) + '만원');
+
   if (isJp) {
-    document.getElementById('rAvg').textContent = '¥' + fmt(r.avgTicket) + ' (₩' + fmt(r.avgTicketKRW) + ')';
-    document.getElementById('rStd').textContent = '±' + fmt(r.stdDev) + '명';
-    document.getElementById('rOpt').textContent = '¥' + fmt(r.optRevenue);
-    document.getElementById('rOptLabel').textContent = '낙관적 ~' + fmt(r.optAttendees) + '명';
-    document.getElementById('rOptSub').textContent = '약 ' + fmt(r.optRevenueAlt) + '만원';
-    document.getElementById('rCon').textContent = '¥' + fmt(r.conRevenue);
-    document.getElementById('rConLabel').textContent = '보수적 ~' + fmt(r.conAttendees) + '명';
-    document.getElementById('rConSub').textContent = '약 ' + fmt(r.conRevenueAlt) + '만원';
-  } else {
-    document.getElementById('rAvg').textContent = '₩' + fmt(r.avgTicket);
-    document.getElementById('rStd').textContent = '±' + fmt(r.stdDev) + '명';
-    document.getElementById('rOpt').textContent = '₩' + fmt(r.optRevenue);
-    document.getElementById('rOptLabel').textContent = '낙관적 ~' + fmt(r.optAttendees) + '명';
-    document.getElementById('rOptSub').textContent = '약 ' + fmt(r.optRevenueAlt) + '만원';
-    document.getElementById('rCon').textContent = '₩' + fmt(r.conRevenue);
-    document.getElementById('rConLabel').textContent = '보수적 ~' + fmt(r.conAttendees) + '명';
-    document.getElementById('rConSub').textContent = '약 ' + fmt(r.conRevenueAlt) + '만원';
+    setText('rAvg', '¥' + fmt(r.avgTicket) + ' (₩' + fmt(r.avgTicketKRW) + ')');
+    setText('rOpt', '¥' + fmt(r.optRevenue));
+    setText('rCon', '¥' + fmt(r.conRevenue));
+    return;
   }
 
-  // 메시지
-  document.getElementById('msgSubtitle').textContent = isJp
-    ? d.msgCount + '개 · 최신순 · 일본어→한국어'
-    : d.msgCount + '개 · 최신순';
+  setText('rAvg', '₩' + fmt(r.avgTicket));
+  setText('rOpt', '₩' + fmt(r.optRevenue));
+  setText('rCon', '₩' + fmt(r.conRevenue));
+}
+
+function renderMessages(d, isJp) {
+  setText('msgSubtitle', isJp ? d.msgCount + '개 · 최신순 · 일본어→한국어' : d.msgCount + '개 · 최신순');
   var msgHtml = '';
   for (var i = 0; i < d.messages.length; i++) {
     var m = d.messages[i];
@@ -480,9 +612,21 @@ function render(d) {
       (showOrig ? '<div class="msg-orig">' + escHtml(m.original) + '</div>' : '') +
       '</div>';
   }
-  document.getElementById('msgList').innerHTML = msgHtml;
-  document.getElementById('loader').classList.add('hidden');
-  document.getElementById('dashboard').classList.remove('hidden');
+  setHtml('msgList', msgHtml);
+}
+
+function render(d) {
+  var isJp = d.source === 'jp';
+  var fmt = function(n){ return Number(n).toLocaleString(); };
+
+  renderHero(d, isJp);
+  renderStats(d, isJp);
+  renderCharts(d, isJp);
+  renderRevenue(d.revenue, isJp, fmt);
+  renderMessages(d, isJp);
+
+  $('loader').classList.add('hidden');
+  $('dashboard').classList.remove('hidden');
   document.documentElement.style.position = 'relative';
 }
 </script>
