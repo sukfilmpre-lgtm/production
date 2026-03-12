@@ -288,7 +288,7 @@ function startLogHeartbeat() {
     if (!_logBaseParams) return;
     var dur = Math.round((Date.now() - _logStartTime) / 1000);
     new Image().src = LOG_SCRIPT_URL + '?' + _logBaseParams + '&event=heartbeat&duration=' + dur;
-  }, 30000);
+  }, 10000);
 }
 
 function sendLeaveLog() {
