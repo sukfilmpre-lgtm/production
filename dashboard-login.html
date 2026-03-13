@@ -137,7 +137,7 @@ body{font-family:'Inter',-apple-system,BlinkMacSystemFont,sans-serif;background:
 <div class="donut-legend" id="leg-country"></div>
 </div>
 <div class="card">
-<div class="card-title">팬미팅 참가 의향</div>
+<div class="card-title" id="partTitle">팬미팅 참가 의향</div>
 <div class="card-sub" id="subPart"></div>
 <div class="donut-wrap"><canvas id="d-part"></canvas></div>
 <div class="donut-legend" id="leg-part"></div>
@@ -145,19 +145,19 @@ body{font-family:'Inter',-apple-system,BlinkMacSystemFont,sans-serif;background:
 </div>
 <div class="grid-2">
 <div class="card">
-<div class="card-title">희망 개최 도시</div>
+<div class="card-title" id="cityTitle">희망 개최 도시</div>
 <div class="card-sub" id="subCity"></div>
 <div class="bar-wrap"><canvas id="b-city"></canvas></div>
 </div>
 <div class="card">
-<div class="card-title">희망 티켓 가격대</div>
+<div class="card-title" id="priceTitle">희망 티켓 가격대</div>
 <div class="card-sub" id="subPrice"></div>
 <div class="donut-wrap"><canvas id="d-price"></canvas></div>
 <div class="donut-legend" id="leg-price"></div>
 </div>
 </div>
 <div class="card" style="margin-bottom:20px">
-<div class="card-title">기대 프로그램</div>
+<div class="card-title" id="progTitle">기대 프로그램</div>
 <div class="card-sub" id="subProg"></div>
 <div class="bar-wrap"><canvas id="b-prog"></canvas></div>
 </div>
@@ -181,7 +181,7 @@ body{font-family:'Inter',-apple-system,BlinkMacSystemFont,sans-serif;background:
 <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2"></script>
 <script>
 var HASH = '7fe4499f716f5fa481f8882e8c9d4977d73b98efc01e4cea06ee0f5879ca1877';
-var APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbyM2UzayhrUYAcoW6upjbHh3_dKRexEInGxdDh90uNyK1SsET1BuVW4wjMHlgiXMDzn/exec';
+var APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbyyaHWLs3c_jwEHVffkGYV-RuNIl18c1WiCfeKUMBg2B2lMI459PsK2ExpbNwQtc5hG/exec';
 var LOG_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbycrtkkR8cCnPKHqoVaVIY_YN3jQFd_O6dlnLNGweQzOrf58kcCqEVArO_fotPM90EMpg/exec';
 var selectedSource = 'jp';
 var ui = {};
@@ -576,16 +576,37 @@ function renderStats(d, isJp) {
 }
 
 function renderCharts(d, isJp) {
-  setText('countryTitle', isJp ? '거주 국가·지역' : '거주 지역');
   setText('surveySubtitle', d.total + '명의 응답을 기반으로 집계');
-  setText('subCountry', '응답 ' + sumObj(d.country) + '개');
-  setText('subPart', '응답 ' + sumObj(d.participate) + '개');
-  setText('subCity', '복수선택 · 응답 ' + sumObj(d.city) + '개');
-  setText('subPrice', '1인 기준 · 응답 ' + sumObj(d.price) + '개');
-  setText('subProg', '복수선택 · 응답 ' + sumObj(d.program) + '개');
-  donut('d-country','leg-country', d.country);
-  donut('d-part','leg-part', d.participate);
-  donut('d-price','leg-price', d.price);
+
+  if (isJp) {
+    setText('countryTitle', '참가 의향');
+    setText('partTitle', '티켓 가격 (¥10,000)');
+    setText('cityTitle', '희망 날짜');
+    setText('priceTitle', '회장 접근성 (도쿄·시부야)');
+    setText('progTitle', '희망 시간대');
+    setText('subCountry', '응답 ' + sumObj(d.participate) + '개');
+    setText('subPart', '응답 ' + sumObj(d.price) + '개');
+    setText('subCity', '복수선택 · 응답 ' + sumObj(d.city) + '개');
+    setText('subPrice', '응답 ' + sumObj(d.venue) + '개');
+    setText('subProg', '복수선택 · 응답 ' + sumObj(d.program) + '개');
+    donut('d-country','leg-country', d.participate);
+    donut('d-part','leg-part', d.price);
+    donut('d-price','leg-price', d.venue);
+  } else {
+    setText('countryTitle', '거주 지역');
+    setText('partTitle', '팬미팅 참가 의향');
+    setText('cityTitle', '희망 개최 도시');
+    setText('priceTitle', '희망 티켓 가격대');
+    setText('progTitle', '기대 프로그램');
+    setText('subCountry', '응답 ' + sumObj(d.country) + '개');
+    setText('subPart', '응답 ' + sumObj(d.participate) + '개');
+    setText('subCity', '복수선택 · 응답 ' + sumObj(d.city) + '개');
+    setText('subPrice', '1인 기준 · 응답 ' + sumObj(d.price) + '개');
+    setText('subProg', '복수선택 · 응답 ' + sumObj(d.program) + '개');
+    donut('d-country','leg-country', d.country);
+    donut('d-part','leg-part', d.participate);
+    donut('d-price','leg-price', d.price);
+  }
   thinBar('b-city', d.city, '#2997ff');
   thinBar('b-prog', d.program, '#0071e3');
 }
