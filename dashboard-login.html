@@ -165,7 +165,7 @@ body{font-family:'Inter',-apple-system,BlinkMacSystemFont,sans-serif;background:
 <div class="sec-title">예상 수익 시뮬레이션</div>
 <div class="sec-sub" id="revSubtitle">참가 의향 가중치 × 평균 티켓가 기반 · 표준편차 보정</div>
 <div class="rev-grid">
-<div class="rev-card"><div class="big" id="rAvg"></div><div class="rl">평균 티켓가</div></div>
+<div class="rev-card"><div class="big" id="rAvg"></div><div class="rl" id="rAvgLabel">평균 티켓가</div></div>
 <div class="rev-card"><div class="big" id="rStd"></div><div class="rl">오차범위 (±σ)</div></div>
 <div class="rev-card"><div class="big accent" id="rOpt"></div><div class="rl" id="rOptLabel"></div><div class="rl" id="rOptSub" style="margin-top:2px"></div></div>
 <div class="rev-card"><div class="big" id="rCon"></div><div class="rl" id="rConLabel"></div><div class="rl" id="rConSub" style="margin-top:2px"></div></div>
@@ -580,7 +580,7 @@ function renderCharts(d, isJp) {
 
   if (isJp) {
     setText('countryTitle', '참가 의향');
-    setText('partTitle', '티켓 가격 (¥10,000)');
+    setText('partTitle', '티켓가 ¥10,000');
     setText('cityTitle', '희망 날짜');
     setText('priceTitle', '회장 접근성 (도쿄·시부야)');
     setText('progTitle', '희망 시간대');
@@ -619,12 +619,14 @@ function renderRevenue(r, isJp, fmt) {
   setText('rConSub', '약 ' + fmt(r.conRevenueAlt) + '만원');
 
   if (isJp) {
+    setText('rAvgLabel', '티켓가');
     setText('rAvg', '¥' + fmt(r.avgTicket) + ' (₩' + fmt(r.avgTicketKRW) + ')');
     setText('rOpt', '¥' + fmt(r.optRevenue));
     setText('rCon', '¥' + fmt(r.conRevenue));
     return;
   }
 
+  setText('rAvgLabel', '평균 티켓가');
   setText('rAvg', '₩' + fmt(r.avgTicket));
   setText('rOpt', '₩' + fmt(r.optRevenue));
   setText('rCon', '₩' + fmt(r.conRevenue));
