@@ -181,7 +181,7 @@ body{font-family:'Inter',-apple-system,BlinkMacSystemFont,sans-serif;background:
 <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2"></script>
 <script>
 var HASH = '7fe4499f716f5fa481f8882e8c9d4977d73b98efc01e4cea06ee0f5879ca1877';
-var APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwewFetLavOYi8EUx9ZAkjfJPDPCsM-mKTyXV1hXDBIg0tpbUd-iDj6uwH4woqh5-ly/exec';
+var APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxzBnCFreCaJeyFJOzMhKH2fyATSs6W5mFtDnjA3NXpjo46HFYNjpF_DFVsO-UJ5Iso/exec';
 var LOG_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbycrtkkR8cCnPKHqoVaVIY_YN3jQFd_O6dlnLNGweQzOrf58kcCqEVArO_fotPM90EMpg/exec';
 var selectedSource = 'jp';
 var ui = {};
@@ -532,7 +532,7 @@ function thinBar(id, obj, color) {
       layout:{padding:{right:90}},
       scales:{
         x:{display:false},
-        y:{grid:{display:false}, ticks:{color:'#3a3a3c', font:{family:'Inter',size:12,weight:'600'}, padding:4}}
+        y:{grid:{display:false}, ticks:{color:'#3a3a3c', font:{family:'Inter',size:11,weight:'600'}, padding:4}, afterFit:function(axis){axis.width=Math.max(axis.width,130);}}
       },
       plugins:{
         legend:{display:false},
@@ -612,6 +612,9 @@ function renderCharts(d, isJp) {
 }
 
 function renderRevenue(r, isJp, fmt) {
+  setText('revSubtitle', isJp
+    ? '개인별 참가·가격·접근성 복합확률 · Poisson-Binomial 80% 예측구간'
+    : '개인별 참가확률 × 가격분포 · Poisson-Binomial + Delta Method');
   setText('rStd', '±' + fmt(r.stdDev) + '명');
   setText('rOptLabel', '낙관적 ~' + fmt(r.optAttendees) + '명');
   setText('rOptSub', '약 ' + fmt(r.optRevenueAlt) + '만원');
