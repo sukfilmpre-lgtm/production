@@ -660,14 +660,17 @@ function renderRevenue(r, isJp, fmt) {
 function renderMessages(d, isJp) {
   setText('msgSubtitle', isJp ? d.msgCount + '개 · 최신순 · 일본어→한국어' : d.msgCount + '개 · 최신순');
   var msgHtml = '';
+  var jpRe = /[\u3040-\u309F\u30A0-\u30FF]/;
   for (var i = 0; i < d.messages.length; i++) {
     var m = d.messages[i];
-    var flag = FLAGS[m.country] || '🌏';
+    var country = m.country;
+    if (jpRe.test(m.original)) country = '일본';
+    var flag = FLAGS[country] || '🌏';
     var time = fmtTime(m.timestamp);
     var text = m.translated || m.original;
     var showOrig = !m.isKorean && m.translated && m.translated !== m.original;
     msgHtml += '<div class="msg">' +
-      '<div class="msg-meta">' + flag + ' ' + m.country + ' · ' + time + '</div>' +
+      '<div class="msg-meta">' + flag + ' ' + country + ' · ' + time + '</div>' +
       '<div class="msg-text">' + escHtml(text).replace(/\n/g,'<br>') + '</div>' +
       (showOrig ? '<div class="msg-orig">' + escHtml(m.original).replace(/\n/g,'<br>') + '</div>' : '') +
       '</div>';
