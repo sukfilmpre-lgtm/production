@@ -183,6 +183,7 @@ body{font-family:'Inter',-apple-system,BlinkMacSystemFont,sans-serif;background:
 var HASH = '7fe4499f716f5fa481f8882e8c9d4977d73b98efc01e4cea06ee0f5879ca1877';
 var APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbyCR6YVlhsfqCLY5_31wfaCu9RWnaLD2HKglXgOY4o15vRcG3Cue_OHMWWyRptsTzh6/exec';
 var LOG_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbycrtkkR8cCnPKHqoVaVIY_YN3jQFd_O6dlnLNGweQzOrf58kcCqEVArO_fotPM90EMpg/exec';
+var KR_DASHBOARD_URL = 'https://script.google.com/macros/s/AKfycbwE-c2UXhhcdVGHQ-cWbdjxyYL9ZGgI4irBeqNpzDvGbI051j-Q_Z2g-SbWgX1Uobxxow/exec';
 var selectedSource = 'jp';
 var ui = {};
 var charts = {};
@@ -208,6 +209,10 @@ function mountChart(id, config) {
 }
 
 function getProxies(src) {
+  if (src === 'kr') {
+    var krBase = KR_DASHBOARD_URL + '?_t=' + Date.now();
+    return [krBase];
+  }
   var base = APPS_SCRIPT_URL + '?source=' + src + '&_t=' + Date.now();
   return [
     'https://corsproxy.io/?' + encodeURIComponent(base),
@@ -465,8 +470,10 @@ function raceFetch() {
   var done = false;
   var fails = 0;
   var proxies = getProxies(selectedSource);
+  var isKr = selectedSource === 'kr';
   proxies.forEach(function(url, i) {
-    fetch(url)
+    var fetchOpts = isKr ? { mode: 'cors', credentials: 'omit', cache: 'no-store' } : {};
+    fetch(url, fetchOpts)
       .then(function(res) {
         if (!res.ok) throw new Error('HTTP ' + res.status);
         return res.json();
@@ -571,7 +578,7 @@ function renderStats(d, isJp) {
   setText('sTotal', d.total);
   setText('sPos', d.posRate + '%');
   setText('sRegion', d.regionRate + '%');
-  setText('sRegionLabel', isJp ? '일본 거주' : '수도권');
+  setText('sRegionLabel', isJp ? '일본 거주' : '참가 의향');
   setText('sMsg', d.msgCount);
 }
 
@@ -593,16 +600,16 @@ function renderCharts(d, isJp) {
     donut('d-part','leg-part', d.price);
     donut('d-price','leg-price', d.venue);
   } else {
-    setText('countryTitle', '거주 지역');
+    setText('countryTitle', '희망 개최 월');
     setText('partTitle', '팬미팅 참가 의향');
-    setText('cityTitle', '희망 개최 도시');
+    setText('cityTitle', '희망 회차');
     setText('priceTitle', '희망 티켓 가격대');
-    setText('progTitle', '기대 프로그램');
+    setText('progTitle', '참가 인원');
     setText('subCountry', '응답 ' + sumObj(d.country) + '개');
     setText('subPart', '응답 ' + sumObj(d.participate) + '개');
-    setText('subCity', '복수선택 · 응답 ' + sumObj(d.city) + '개');
+    setText('subCity', '응답 ' + sumObj(d.city) + '개');
     setText('subPrice', '1인 기준 · 응답 ' + sumObj(d.price) + '개');
-    setText('subProg', '복수선택 · 응답 ' + sumObj(d.program) + '개');
+    setText('subProg', '응답 ' + sumObj(d.program) + '개');
     donut('d-country','leg-country', d.country);
     donut('d-part','leg-part', d.participate);
     donut('d-price','leg-price', d.price);
