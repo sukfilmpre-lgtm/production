@@ -668,8 +668,8 @@ function renderMessages(d, isJp) {
     var showOrig = !m.isKorean && m.translated && m.translated !== m.original;
     msgHtml += '<div class="msg">' +
       '<div class="msg-meta">' + flag + ' ' + m.country + ' · ' + time + '</div>' +
-      '<div class="msg-text">' + escHtml(text) + '</div>' +
-      (showOrig ? '<div class="msg-orig">' + escHtml(m.original) + '</div>' : '') +
+      '<div class="msg-text">' + escHtml(text).replace(/\n/g,'<br>') + '</div>' +
+      (showOrig ? '<div class="msg-orig">' + escHtml(m.original).replace(/\n/g,'<br>') + '</div>' : '') +
       '</div>';
   }
   setHtml('msgList', msgHtml);
