@@ -600,22 +600,30 @@ function renderCharts(d, isJp) {
     donut('d-part','leg-part', d.price);
     donut('d-price','leg-price', d.venue);
   } else {
-    setText('countryTitle', '희망 개최 월');
-    setText('partTitle', '팬미팅 참가 의향');
+    // 슬롯1(country) → 참가 의향, 슬롯2(part) → 희망 개최 월
+    // 슬롯3(city) → 희망 회차, 슬롯4(price) → 참가 인원
+    // 슬롯5(prog) → 희망 티켓 가격대
+    setText('countryTitle', '팬미팅 참가 의향');
+    setText('partTitle', '희망 개최 월');
     setText('cityTitle', '희망 회차');
-    setText('priceTitle', '희망 티켓 가격대');
-    setText('progTitle', '참가 인원');
-    setText('subCountry', '응답 ' + sumObj(d.country) + '개');
-    setText('subPart', '응답 ' + sumObj(d.participate) + '개');
+    setText('priceTitle', '참가 인원');
+    setText('progTitle', '희망 티켓 가격대');
+    setText('subCountry', '응답 ' + sumObj(d.participate) + '개');
+    setText('subPart', '응답 ' + sumObj(d.country) + '개');
     setText('subCity', '응답 ' + sumObj(d.city) + '개');
-    setText('subPrice', '1인 기준 · 응답 ' + sumObj(d.price) + '개');
-    setText('subProg', '응답 ' + sumObj(d.program) + '개');
-    donut('d-country','leg-country', d.country);
-    donut('d-part','leg-part', d.participate);
-    donut('d-price','leg-price', d.price);
+    setText('subPrice', '응답 ' + sumObj(d.program) + '개');
+    setText('subProg', '1인 기준 · 응답 ' + sumObj(d.price) + '개');
+    donut('d-country','leg-country', d.participate);
+    donut('d-part','leg-part', d.country);
+    donut('d-price','leg-price', d.program);
   }
-  thinBar('b-city', d.city, '#2997ff');
-  thinBar('b-prog', d.program, '#0071e3');
+  if (isJp) {
+    thinBar('b-city', d.city, '#2997ff');
+    thinBar('b-prog', d.program, '#0071e3');
+  } else {
+    thinBar('b-city', d.city, '#2997ff');
+    thinBar('b-prog', d.price, '#0071e3');
+  }
 }
 
 function renderRevenue(r, isJp, fmt) {
