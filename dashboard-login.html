@@ -584,8 +584,8 @@ function renderStats(d, isJp) {
     setText('sRegionLabel', '일본 거주');
   } else {
     var r = d.revenue;
-    setHtml('sRegion', '<span style="font-size:16px;color:#0071e3">' + fmt(r.optAttendees) + '</span><span style="font-size:11px;color:#86868b"> / </span><span style="font-size:16px">' + fmt(r.conAttendees) + '</span>');
-    setText('sRegionLabel', '낙관 / 보수 (명)');
+    setHtml('sRegion', '<div style="line-height:1.2"><span style="font-size:22px;font-weight:700;color:#0071e3">' + fmt(r.optAttendees) + '</span><span style="font-size:11px;color:#86868b"> 명</span></div><div style="line-height:1.2;margin-top:2px"><span style="font-size:22px;font-weight:700;color:#86868b">' + fmt(r.conAttendees) + '</span><span style="font-size:11px;color:#86868b"> 명</span></div>');
+    setHtml('sRegionLabel', '<span style="color:#0071e3">낙관</span> · <span style="color:#86868b">보수</span>');
   }
 }
 
